@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+
+{% block head %}
+<title>Historical Observations</title>
+<h1 style="text-align:center">Historical Observations</h1>
+{% endblock %}
+
+{% block body %}
+<div class="datacontent">
+    <div class="form">
+		<form action="/historical" method="POST">
+			<input type="date" name="start" id="start">
+            -to-
+			<input type="date" name="end" id="end">
+			<input type="submit" value="View Observations">
+		</form>
+	</div>
+    <div class="plotdiv">
+        {{ div_plot | safe }}
+    </div>
+    <br></br>
+    <br></br>
+    
+    <table>
+        <thead>
+            <tr>
+    			<th>Date/Time (UTC)</th>
+    			<th>Temperature (C)</th>
+    			<th>Humidity (%)</th>
+    			<th>Pressure (mb)</th>
+    		</tr>
+        </thead>
+        <tbody>
+            {% for cob in tableobs %}
+            <tr>
+    			<td>{{ cob.date.strftime("%Y-%m-%d %H:%M") }}</td>
+    			<td>{{ round(cob.temp,1) }}</td>
+    			<td>{{ round(cob.rh,1) }}</td>
+    			<td>{{ round(cob.pres) }}</td>
+    		</tr>
+            {% endfor %}
+        </tbody>
+	</table>
+    
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+
+{% block head %}
+<title>Current Weather</title>
+<h1>Current Weather</h1>
+{% endblock %}
+
+{% block body %}
+<div class="datacontent">
+	<h2>Current Conditions</h2>
+    
+    <table>
+		<tr>
+			<th>Updated:</th>
+			<th>{{ ob["date"] }}</th>
+		</tr>
+		<tr>
+			<td>Temperature (C):</td>
+			<td>{{ ob["temp"] }}</td>
+		</tr>
+		<tr>
+			<td>Humidity (%):</td>
+			<td>{{ ob["rh"] }}</td>
+		</tr>
+		<tr>
+			<td>Pressure (mb):</td>
+			<td>{{ ob["pres"] }}</td>
+		</tr>
+	</table>
+    <br></br>
+    <br></br>
+    
+    <h2 style="text-align:center">Recent Observations</h2>
+    <div class="plotdiv">
+        {{ div_plot | safe }}
+    </div>
+    <br></br>
+    <br></br>
+    
+    <table>
+        <thead>
+            <tr>
+    			<th>Date/Time (UTC)</th>
+    			<th>Temperature (C)</th>
+    			<th>Humidity (%)</th>
+    			<th>Pressure (mb)</th>
+    		</tr>
+        </thead>
+        <tbody>
+            {% for cob in tableobs %}
+            <tr>
+    			<td>{{ cob.date.strftime("%Y-%m-%d %H:%M") }}</td>
+    			<td>{{ cob.temp }}</td>
+    			<td>{{ cob.rh }}</td>
+    			<td>{{ cob.pres }}</td>
+    		</tr>
+            {% endfor %}
+        </tbody>
+	</table>
+    
+</div>
+{% endblock %}

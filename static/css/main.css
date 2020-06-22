@@ -1,0 +1,162 @@
+body, html {
+    font-family: sans-serif;
+    margin: 0;
+    background-color: #dbeeff;
+}
+
+/* title below the nav bar */
+.container {
+  position: relative;
+  text-align: center;
+  color: white;
+}
+.titlebar {
+      position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /*overflow: hidden;
+    background-color: #444;
+    width: 100%;
+    margin: 0;
+    position: top;
+    padding-top: 60px;
+    padding-bottom: 20px;*/
+}
+
+/* navigation bar */
+.navbar {
+    overflow: auto;
+    background-color: #060477;
+    position: -webkit-sticky; /* Safari */
+    position: sticky;
+    position: fixed; 
+    position: top;
+    padding: 14px 20px;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    z-index:1; /*stay on top*/
+}
+
+/* Links inside the navbar */
+.navbar a {
+    float: center;
+    /*display: inline;*/
+    color: #fff;
+    background-color: #060477;
+    text-align: center;
+    width: 25%;
+    padding: 20px;
+    text-decoration: none;
+}
+
+/* Add responsiveness - on screens less than 500px, make the navigation links appear on top of each other, instead of next to each other */
+@media screen and (max-width: 500px) {
+  .navbar a {
+    float: none;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Change link appearance on mouse-over */
+.navbar a:hover {
+    background: #ddd;
+    color: black;
+}
+
+
+/* Main content */
+.main {
+  margin-top: 30px; /* Add a top margin to avoid content overlay */
+}
+
+.content {
+    margin: 0 auto;
+    width: 65%;
+    text-align: center;
+}
+
+.datacontent {
+    margin: 0 auto;
+    width: 90%;
+    text-align: center;
+}
+
+
+.plotdiv {
+    float: center;
+    display: block;
+    position: static;
+}
+
+/*#content {
+    width: 90%;
+}*/
+
+h1 {
+    display: block;
+    text-align: center;
+    font-size: 2em;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+    color: #fff;
+}
+
+h2 {
+    display: block;
+    text-align: center;
+    font-size: 1.5em;
+    margin-top: 0.83em;
+    margin-bottom: 0.83em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+}
+
+h3 {
+    display: block;
+    font-size: 1.17em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+}
+
+table{
+    display: inline;
+    float: center;
+}
+
+th {
+    color: #fff;
+    background-color: #060477;
+    font-weight: bold;
+}
+
+th, td {
+    border-bottom: 1px solid #ddd;
+    padding: 5px 20px;
+    text-align: left;
+}
+
+
+tr:nth-child(odd) {background-color: #aaaaaa;}
+tr:nth-child(even) {background-color: #dadada;}
+
+tr:hover {
+    color: #fff;
+    background-color: #060477;
+    font-weight: bold;
+}
+
+
+
+
+/* Colors: pewter blue (76949F), gold (A08103), navy blue (060477), green sheen 86BBBD), onyx (303633)  */
