@@ -11,6 +11,7 @@ from bokeh.transform import factor_cmap
 from datetime import datetime, timedelta
 from dateutil import tz
 import numpy as np
+from hashlib import sha1
 
 
 
@@ -27,7 +28,6 @@ app.add_template_global(np.round, name='round') #allows HTML templates to use np
 db = SQLAlchemy(app) #initialize database
 
 
-    
 
 
 
@@ -44,9 +44,14 @@ class wxobs(db.Model): #class for database
     temp = db.Column(db.Float, nullable=False) 
     rh = db.Column(db.Float, nullable=False) 
     pres = db.Column(db.Float, nullable=False) 
-
+    wspd = db.Column(db.Float, nullable=False)
+    wdir = db.Column(db.Float, nullable=False)
+    precip = db.Column(db.Float, nullable=False)
+    solar = db.Column(db.Float, nullable=False)
+    strikes = db.Column(db.Float, nullable=False)
+    
     def __repr__(self): #keyword function for everytime the database is updated
-        return f'{self.id},{self.date},{self.temp},{self.rh},{self.pres}'
+        return f'Entry {self.id}: {self.date.strftime("%y%m%d %H:%M:%S")}'
         
         
 def parsedboutput(obs):
@@ -54,44 +59,49 @@ def parsedboutput(obs):
     temp = []
     rh = []
     pres = []
+    wspd = []
+    wdir = []
+    precip = []
+    solar = []
+    strikes = []
     
     for entry in obs:
         date.append(replacetimezone(entry.date,fromzone,tozone)) #local time
         temp.append(entry.temp)
         rh.append(entry.rh)
         pres.append(entry.pres)
+        wspd.append(entry.wspd)
+        wdir.append(entry.wdir)
+        precip.append(entry.precip)
+        solar.append(entry.solar)
+        strikes.append(entry.strikes)
             
-    return date,temp,rh,pres
+    return date,temp,rh,pres,wspd,wdir,precip,solar,strikes
 
 
     
         
-
-
-        
+    
         
         
 #######################################################################################
 #                                    SITE ROUTING                                     #
 #######################################################################################
-    
-    
+
 #default website link loads current conditions
 @app.route('/', methods=['POST','GET']) 
 @app.route('/current', methods=['POST','GET']) 
 def index():
     
-    enddate = datetime(2020,6,20,2,53,0) #TO DEPLOY: replace w/ datetime.utcnow()
+    enddate = datetime(2020,7,31,23,0,0)
+    #enddate = datetime.utcnow() #current date
     startdate = enddate - timedelta(hours=8)
     
     tableobs = wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate) #observations for plot/table
     obsplot = observations_plot(tableobs) #building plot components given observations
-    
     lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first
-    lastobdate = replacetimezone(lastob.date, fromzone, tozone)
-    lastobdict = {"date":lastobdate.strftime("%Y-%m-%d %H:%M %Z"), "temp":lastob.temp, "rh":lastob.rh, "pres":lastob.pres}
     
-    return render_template('current.html',ob=lastobdict, div_plot=obsplot, tableobs=tableobs) #GET request- show content
+    return render_template('current.html',lastob=lastob, div_plot=obsplot, tableobs=tableobs) #GET request- show content
     
 
     
@@ -152,11 +162,36 @@ def howto():
     
     
     
+#route to update database with new information
+#73d2be97af11e8ce2144cca61dc2749e643fa6d5 is SHA1 checksum for passphrase required for observation
+@app.route('/addnewob', methods=['POST'])
+def addnewob():
     
-#TODO: route to update database with new information
-
-
-
+    if sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5":
+        
+        try:
+            cdate = datetime.strptime(request.form['date'],"%Y%m%d %H:%M:%S")
+            cta = request.form["ta"]
+            crh = request.form["rh"]
+            cpres = request.form["pres"]
+            cwspd = request.form["wspd"]
+            cwdir = request.form["wdir"]
+            csolar = request.form["solar"]
+            cprecip = request.form["precip"]
+            cstrikes = request.form["strikes"]
+        except KeyError:
+            return "MISSING_POST_FIELD"
+            
+        #adding to database
+        lastID = wxobs.query.order_by(-wxobs.id).first().id
+        entry = wxobs(id=lastID + 1, date=cdate, temp=cta, rh=crh, pres=cpres, wspd = cwspd, wdir = cwdir, precip=cprecip, solar=csolar, strikes=cstrikes)
+        db.session.add(entry)
+        db.session.commit()
+        
+        #return success message to indicate data was added
+        return "SUCCESS"
+    else:
+        return "INVALID_CREDENTIAL"
 
 
 
@@ -209,8 +244,8 @@ def plot_styler(p):
 def observations_plot(obstoplot):
     
     #parsing out observations in range to be plotted
-    date,temp,rh,pres = parsedboutput(obstoplot)
-    source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres}) #organizing data into columndatasource format
+    date,temp,rh,pres,wspd,wdir,precip,solar,strikes = parsedboutput(obstoplot)
+    source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "solar":solar, "strikes":strikes}) #organizing data into columndatasource format
     
     
     #initializing figure
@@ -237,6 +272,34 @@ def observations_plot(obstoplot):
     p.line(x="date", y="pres", source=source, line_color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
     p.circle(x="date", y="pres", source=source, color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
     
+    #wind speed
+    p.extra_y_ranges["wspd"] = Range1d(start=np.floor(np.min(wspd))-1, end=np.ceil(np.max(wspd))+1)
+    p.add_layout(LinearAxis(y_range_name="wspd", axis_line_color="orange"), 'left')
+    p.line(x="date", y="wspd", source=source, line_color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
+    p.circle(x="date", y="wspd", source=source, color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
+    
+    #wind direction
+    p.extra_y_ranges["wdir"] = Range1d(start=np.floor(np.min(wdir))-1, end=np.ceil(np.max(wdir))+1)
+    p.add_layout(LinearAxis(y_range_name="wdir", axis_line_color="purple"), 'left')
+    p.circle(x="date", y="wdir", source=source, color="purple", name="Wind Direction", y_range_name="wdir", legend_label="Wind Direction")
+    
+    #precipitation TODO- MAKE BAR
+    p.extra_y_ranges["precip"] = Range1d(start=np.floor(np.min(precip)), end=np.ceil(np.max(precip))+1)
+    p.add_layout(LinearAxis(y_range_name="precip", axis_line_color="blue"), 'left')
+    p.vbar(x="date",top="precip", width = .9, fill_alpha = .5, fill_color = 'blue', line_alpha = .5, line_color='blue', source=source, name="Precipitation", y_range_name="precip", legend_label="Precipitation")
+
+    
+    #solar radiation
+    p.extra_y_ranges["solar"] = Range1d(start=np.floor(np.min(solar))-1, end=np.ceil(np.max(solar))+1)
+    p.add_layout(LinearAxis(y_range_name="solar", axis_line_color="yellow"), 'left')
+    p.line(x="date", y="solar", source=source, line_color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
+    p.circle(x="date", y="solar", source=source, color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
+    
+    #lightning strikes
+    p.extra_y_ranges["strikes"] = Range1d(start=np.floor(np.min(strikes)), end=np.ceil(np.max(strikes))+1)
+    p.add_layout(LinearAxis(y_range_name="strikes", axis_line_color="yellow"), 'left')
+    p.vbar(x="date",top="strikes", width = .9, fill_alpha = .5, fill_color = 'yellow', line_alpha = .5, line_color='yellow', source=source, name="Lightning Strikes", y_range_name="strikes", legend_label="Lightning Strikes")
+    
     
     #adding legend
     p.legend.location = "top_left"
@@ -244,7 +307,10 @@ def observations_plot(obstoplot):
     
     
     #adding hover tool
-    TOOLTIPS=[("Date", "@date{%Y-%m-%d %H:%M}"), ("Temperature (C)", "@temp{00.0}"), ("Humidity (%)", "@rh{00.0}"), ("Pressure (mb)", "@pres{0000.0}")] #setting tooltips for interactive hover
+    TOOLTIPS=[("Date", "@date{%Y-%m-%d %H:%M}"), 
+                ("Temperature (C)", "@temp{00.0}"), 
+                ("Humidity (%)", "@rh{00.0}"), 
+                ("Pressure (mb)", "@pres{0000.0}")] #setting tooltips for interactive hover
     hovertool = HoverTool(tooltips=TOOLTIPS, formatters={'@date': 'datetime'}) # use 'datetime' formatter for '@date' field
     p.add_tools(hovertool)
     

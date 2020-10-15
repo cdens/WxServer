@@ -13,19 +13,39 @@
     <table>
 		<tr>
 			<th>Updated:</th>
-			<th>{{ ob["date"] }}</th>
+			<th>{{ lastob.date.strftime("%Y-%m-%d %H:%M") }}</th>
 		</tr>
 		<tr>
-			<td>Temperature (C):</td>
-			<td>{{ ob["temp"] }}</td>
+			<td>Temperature (<sup>o</sup>C):</td>
+			<td>{{ round(lastob.temp,1) }}</td>
 		</tr>
 		<tr>
 			<td>Humidity (%):</td>
-			<td>{{ ob["rh"] }}</td>
+			<td>{{ round(lastob.rh,1) }}</td>
 		</tr>
 		<tr>
 			<td>Pressure (mb):</td>
-			<td>{{ ob["pres"] }}</td>
+			<td>{{ round(lastob.pres,1) }}</td>
+		</tr>
+		<tr>
+			<td>Wind Speed (m/s):</td>
+			<td>{{ round(lastob.wspd,1) }}</td>
+		</tr>
+		<tr>
+			<td>Wind Direction (<sup>o</sup>T):</td>
+			<td>{{ round(lastob.wdir,1) }}</td>
+		</tr>
+		<tr>
+			<td>Rainfall (cm):</td>
+			<td>{{ round(lastob.precip,1) }}</td>
+		</tr>
+		<tr>
+			<td>Solar Radiation (J/m<sup>2</sup>):</td>
+			<td>{{ round(lastob.solar,1) }}</td>
+		</tr>
+		<tr>
+			<td>Lightning Strikes:</td>
+			<td>{{ round(lastob.strikes,1) }}</td>
 		</tr>
 	</table>
     <br></br>
@@ -42,18 +62,28 @@
         <thead>
             <tr>
     			<th>Date/Time (UTC)</th>
-    			<th>Temperature (C)</th>
+    			<th>Temperature (<sup>o</sup>C)</th>
     			<th>Humidity (%)</th>
     			<th>Pressure (mb)</th>
+                <th>Wind Speed (m/s)</th>
+                <th>Wind Direction (<sup>o</sup>T)</th>
+                <th>Rainfall (cm)</th>
+                <th>Solar Radiation (J/m<sup>2</sup>)</th>
+                <th>Lightning Strikes</th>
     		</tr>
         </thead>
         <tbody>
             {% for cob in tableobs %}
             <tr>
     			<td>{{ cob.date.strftime("%Y-%m-%d %H:%M") }}</td>
-    			<td>{{ cob.temp }}</td>
-    			<td>{{ cob.rh }}</td>
-    			<td>{{ cob.pres }}</td>
+    			<td>{{ round(cob.temp,1) }}</td>
+    			<td>{{ round(cob.rh,1) }}</td>
+    			<td>{{ round(cob.pres,1) }}</td>
+    			<td>{{ round(cob.wspd,1) }}</td>
+    			<td>{{ round(cob.wdir,0) }}</td>
+    			<td>{{ round(cob.precip,1) }}</td>
+    			<td>{{ round(cob.solar,1) }}</td>
+    			<td>{{ round(cob.strikes,0) }}</td>
     		</tr>
             {% endfor %}
         </tbody>

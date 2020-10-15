@@ -1,63 +1,99 @@
 from flask_sqlalchemy import SQLAlchemy
 from app import db
-from datetime import datetime
-from dateutil import tz
+from datetime import datetime, timedelta
 import os
+import numpy as np
 
-
-tozone = tz.gettz('UTC')
-fromzone = tz.gettz('America/New York')
-def replacetimezone(inputdate,inputzone,outputzone):
-    
-    inputdate = inputdate.replace(tzinfo=inputzone)
-    outputdate = inputdate.astimezone(outputzone)
-    
-    return outputdate
-
+csvdir = "../wxdata/"
 
 def readfile(filename):
     
     dates = []
-    T = []
-    RH = []
+    ta = []
+    rh = []
     pres = []
+    wspd = []
+    wdir = []
+    solar = []
+    precip = []
+    strikes = []
     
-    with open("data/" + filename) as f:
+    with open(filename) as f:
         for line in f:
-            line = line.strip().split()
+            line = line.strip().split(',')
             
-            cdt = datetime.strptime(f"{filename[1:9]} {line[0]} {line[1]}", "%Y%m%d %I:%M %p")
-            cdatetime = replacetimezone(cdt,fromzone,tozone)
+            dates.append(datetime.strptime(f"{line[0]}", "%Y%m%d %H:%M:%S"))
+            ta.append(float(line[1]))
+            rh.append(float(line[2]))
+            pres.append(float(line[3]))
+            wspd.append(float(line[4]))
+            wdir.append(float(line[5]))
+            solar.append(float(line[6]))
+            precip.append(float(line[7]))
+            strikes.append(float(line[8]))
             
-            dates.append(cdatetime)
-            T.append(float(line[2]))
-            RH.append(float(line[6]))
-            pres.append(np.round(33.8639*float(line[13]),1))
-        
-    return dates, T, RH, pres
-
+    return dates, ta, rh, pres, wspd, wdir, solar, precip, strikes
+            
+            
 
 #creating db
 if os.path.exists('wxobs.db'):
     os.remove('wxobs.db')
 db.create_all()
 
+
 #appending data to database
 from app import wxobs
 
-allfiles = ["d20200613.txt", "d20200614.txt", "d20200615.txt", "d20200616.txt", "d20200617.txt", "d20200618.txt", "d20200619.txt"]
 
-i = 0
+#getting list of files to read from
+allfiles = os.listdir(csvdir)
+allfiles.sort() #numerical (chronological) order
+
+
+#reading in data from CSV files
+dates = []
+ta = []
+rh = []
+pres = []
+wspd = []
+wdir = []
+solar = []
+precip = []
+strikes = []
+
 for file in allfiles:
-    dates,T,RH,pressure = readfile(file)
     
-    for (d,t,q,p) in zip(dates, T, RH, pressure):
-        i += 1
-        entry = wxobs(id=i, date=d, temp=t, rh=q, pres=p)
-        db.session.add(entry)
+    if file[:3] == "d20": #only csv files
+        fdates, fta, frh, fpres, fwspd, fwdir, fsolar, fprecip, fstrikes = readfile(csvdir + file)
+            
+        for (cdate,cta,crh,cpres,cwspd,cwdir,csolar,cprecip,cstrikes) in zip(fdates, fta, frh, fpres, fwspd, fwdir, fsolar, fprecip, fstrikes):
+            dates.append(cdate)
+            ta.append(cta)
+            rh.append(crh)
+            pres.append(cpres)
+            wspd.append(cwspd)
+            wdir.append(cwdir)
+            solar.append(csolar)
+            precip.append(cprecip)
+            strikes.append(cstrikes)
+
+
+#adding all entries to db
+i = 0
+for (cdate,cta,crh,cpres,cwspd,cwdir,csolar,cprecip,cstrikes) in zip(dates, ta, rh, pres, wspd, wdir, solar, precip, strikes):
+    i += 1
+    entry = wxobs(id=i, date=cdate, temp=cta, rh=crh, pres=cpres, wspd = cwspd, wdir = cwdir, precip=cprecip, solar=csolar, strikes=cstrikes)
+    db.session.add(entry)
     
 db.session.commit()
 
 
 #check that data has been added successfully
 print(wxobs.query.all())
+
+
+
+
+
+
