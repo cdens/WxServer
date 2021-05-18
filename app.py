@@ -13,6 +13,8 @@ from dateutil import tz
 import numpy as np
 from hashlib import sha1
 
+from geopy.geocoders import Nominatim
+
 
 
 
@@ -28,9 +30,17 @@ app.add_template_global(np.round, name='round') #allows HTML templates to use np
 db = SQLAlchemy(app) #initialize database
 
 
+#global variables tracking position, last lightning strike
+global lastStrikeTime, lastStrikeDist, latitude, longitude, locationstr
 
+#default position is Pensacola, FL
+latitude = "30.37"
+longitude = "-87.34" 
+locationstr = "Pensacola, FL, USA"
 
-
+#default strike time = LONG ago, distance = FAR away
+lastStrikeTime = datetime(1,1,1)
+lastStrikeDist = 1000
 
 #######################################################################################
 #                                   DATABASE CONFIGURATION                            #
@@ -93,7 +103,13 @@ def parsedboutput(obs):
 @app.route('/current', methods=['POST','GET']) 
 def index():
     
+    global lastStrikeTime, lastStrikeDist, latitude, longitude, locationstr
+    
+    #testing code !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     enddate = datetime(2020,7,31,23,0,0)
+    lastStrikeTime = datetime(2020,7,31,22,48,23)
+    lastStrikeDist = 6
+    
     #enddate = datetime.utcnow() #current date
     startdate = enddate - timedelta(hours=8)
     
@@ -101,7 +117,20 @@ def index():
     obsplot = observations_plot(tableobs) #building plot components given observations
     lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first
     
-    return render_template('current.html',lastob=lastob, div_plot=obsplot, tableobs=tableobs) #GET request- show content
+    #GPS position info
+    if locationstr != "":
+        gpstext = locationstr
+    else:
+       gpstext = latitude + ", " + longitude 
+    
+    #lightning strike info
+    lightningtext = False
+    timeSinceStrike = int(np.round((enddate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
+    if timeSinceStrike <= 30 and lastStrikeDist <= 30: #within 30 mins/30 km
+        lightningtext = f"Lightning detected {timeSinceStrike} minutes ago, {lastStrikeDist} km away"
+    
+    #GET request- show content
+    return render_template('current.html',lastob=lastob, div_plot=obsplot, tableobs=tableobs, lightningtext=lightningtext, gpstext=gpstext) 
     
 
     
@@ -162,8 +191,10 @@ def howto():
     
     
     
-#route to update database with new information
-#73d2be97af11e8ce2144cca61dc2749e643fa6d5 is SHA1 checksum for passphrase required for observation
+#routes to update database with new information
+#73d2be97af11e8ce2144cca61dc2749e643fa6d5 is SHA1 checksum for passphrase required
+
+#update regular observation (T/q/P/rain/wind/strikerate/solar)
 @app.route('/addnewob', methods=['POST'])
 def addnewob():
     
@@ -193,7 +224,82 @@ def addnewob():
     else:
         return "INVALID_CREDENTIAL"
 
+        
 
+#update GPS position
+@app.route('/updateGPS', methods=['POST'])
+def updateGPS():
+    
+    global latitude, longitude, locationstr
+    
+    if sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5":
+        
+        try:
+            latitude = request.form['latitude']
+            longitude = request.form['longitude']
+            
+            try:
+                geolocator = Nominatim(user_agent="geoapiExercises")
+                loc = geolocator.reverse(f"{latitude},{longitude}", language="en")
+                locationstr = parse_geolocator(loc)
+            except:
+                locationstr = ""
+                
+            return "SUCCESS"
+            
+        except KeyError:
+            return "MISSING_POST_FIELD"
+            
+    else:
+        return "INVALID_CREDENTIAL"
+
+
+def parse_geolocator(loc):
+    outputstr = ""
+    l = loc.raw['address']
+    
+    p1 = "none"
+    priority = ['city','town','village','county','hamlet','suburb','neighborhood','road']
+    for item in priority:
+        if item in l:
+            outputstr += l[item] + ", "
+            p1 = item
+            break
+    
+    priority = ['state','state-district','province']
+    if p1.lower() != 'county':
+        priority.append('county')
+    for item in priority:
+        if item in l:
+            outputstr += l[item]
+            break
+    
+    if l['country'].lower() != 'united states':
+        outputstr += ", " + l['country']
+        
+    return outputstr    
+        
+
+#new lightning strike
+#update GPS position
+@app.route('/strikereport', methods=['POST'])
+def strikereport():
+    global lastStrikeTime, lastStrikeDist
+    
+    if sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5":
+        
+        try:
+            lastStrikeTime = datetime.strptime(request.form['date'],"%Y%m%d %H:%M:%S")
+            lastStrikeDist = int(np.round(float(request.form['distance'])))
+            
+            #return success message to indicate data was added
+            return "SUCCESS"
+            
+        except KeyError:
+            return "MISSING_POST_FIELD"
+            
+    else:
+        return "INVALID_CREDENTIAL"
 
 
 #######################################################################################

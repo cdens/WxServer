@@ -8,7 +8,13 @@
 
 {% block body %}
 <div class="datacontent">
-	<h2>Current Conditions</h2>
+    
+        
+    {% if lightningtext %}
+    <h3>{{lightningtext}}</h3>
+    {% endif %}
+    
+	<h2>Current Conditions ({{gpstext}})</h2>
     
     <table>
 		<tr>
