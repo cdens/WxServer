@@ -106,8 +106,8 @@ def index():
     global lastStrikeTime, lastStrikeDist, latitude, longitude, locationstr
     
     #testing code !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    enddate = datetime(2020,7,31,23,0,0)
-    lastStrikeTime = datetime(2020,7,31,22,48,23)
+    enddate = datetime(2021,3,1,2,0,0)
+    lastStrikeTime = datetime(2021,3,1,1,48,23)
     lastStrikeDist = 6
     
     #enddate = datetime.utcnow() #current date
@@ -148,9 +148,6 @@ def historical():
     else:
         startdate = False
         enddate = False
-        
-    print(startdate)
-    print(enddate)
             
     #if one date missing- return 14 day window. If both missing, return 14 day window from present
     if not startdate and not enddate:
@@ -416,7 +413,12 @@ def observations_plot(obstoplot):
     TOOLTIPS=[("Date", "@date{%Y-%m-%d %H:%M}"), 
                 ("Temperature (C)", "@temp{00.0}"), 
                 ("Humidity (%)", "@rh{00.0}"), 
-                ("Pressure (mb)", "@pres{0000.0}")] #setting tooltips for interactive hover
+                ("Pressure (mb)", "@pres{0000.0}"),
+                ("Wind Speed (mph)", "@wspd{0.0}"),
+                ("Wind Direction", "@wdir{000}"),
+                ("Precipitation (mm/hr)", "@precip{0.0}"),
+                ("Solar Radiation", "@solar"),
+                ("Lightning Strikes (per hour)", "@strikes{0.0}")] #setting tooltips for interactive hover
     hovertool = HoverTool(tooltips=TOOLTIPS, formatters={'@date': 'datetime'}) # use 'datetime' formatter for '@date' field
     p.add_tools(hovertool)
     
