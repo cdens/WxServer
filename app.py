@@ -104,11 +104,11 @@ def index():
     global lastStrikeTime, lastStrikeDist, latitude, longitude, locationstr
     
     #testing code !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    enddate = datetime(2021,3,1,2,0,0)
-    lastStrikeTime = datetime(2021,3,1,1,48,23)
-    lastStrikeDist = 6
+    #enddate = datetime(2021,3,1,2,0,0)
+    #lastStrikeTime = datetime(2021,3,1,1,48,23)
+    #lastStrikeDist = 6
     
-    #enddate = datetime.utcnow() #current date
+    enddate = datetime.utcnow() #current date
     startdate = enddate - timedelta(hours=8)
     
     tableobs = wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate) #observations for plot/table
@@ -196,7 +196,7 @@ def addnewob():
     if sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5":
         
         try:
-            cdate = datetime.strptime(request.form['date'],"%Y%m%d %H:%M:%S")
+            cdate = parsedatestr(request.form['date'])
             cta = request.form["ta"]
             crh = request.form["rh"]
             cpres = request.form["pres"]
@@ -284,7 +284,7 @@ def strikereport():
     if sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5":
         
         try:
-            lastStrikeTime = datetime.strptime(request.form['date'],"%Y%m%d %H:%M:%S")
+            lastStrikeTime = parsedatestr(request.form['date'])
             lastStrikeDist = int(np.round(float(request.form['distance'])))
             
             #return success message to indicate data was added
