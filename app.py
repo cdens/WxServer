@@ -46,7 +46,7 @@ lastStrikeDist = 1000
 
 
 #to initialize database, from cmd line do "from app import db", then "db.create_all()"
-class wxobs(db.Model): #class for database
+class wxobs(db.Model): #class for weather observations database
     id = db.Column(db.Integer, primary_key=True) #primary key for database
     date = db.Column(db.DateTime, default=datetime.utcnow)
     temp = db.Column(db.Float, nullable=False) 
