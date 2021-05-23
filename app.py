@@ -8,8 +8,11 @@ from bokeh.models import ColumnDataSource, HoverTool, PrintfTickFormatter, Datet
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 
+import shutil
 from datetime import datetime, timedelta
 from dateutil import tz
+import timezonefinder, pytz
+from suntime import Sun, SunTimeException
 import numpy as np
 from hashlib import sha1
 
@@ -29,16 +32,76 @@ db = SQLAlchemy(app) #initialize database
 
 
 #global variables tracking position, last lightning strike
-global lastStrikeTime, lastStrikeDist, latitude, longitude, locationstr
+global lastStrikeTime, lastStrikeDist
 
 #default position is Pensacola, FL
-latitude = "30.37"
-longitude = "-87.34" 
-locationstr = "Pensacola, FL, USA"
+class LocationInfo():
+    
+    def __init__(self):
+        self.latitude = "30.37"
+        self.longitude = "-87.34" 
+        self.locationstr = "Pensacola, FL, USA"
+        
+        self.timezone = self.get_time_zone()
+        self.sun_times = self.get_sun_times()
+    
+    def get_time_zone(self):
+        tf = timezonefinder.TimezoneFinder()
+        return tf.certain_timezone_at(lat=float(self.latitude), lng=float(self.longitude))
+    
+    def get_sun_times(self):
+        sun = Sun(float(self.latitude), float(self.longitude))
+        return [sun.get_sunrise_time(), sun.get_sunset_time()]
+    
+    def parse_geolocator():
+        outputstr = ""
+        l = self.loc.raw['address']
+    
+        p1 = "none"
+        priority = ['city','town','village','county','hamlet','suburb','neighborhood','road']
+        for item in priority:
+            if item in l:
+                outputstr += l[item] + ", "
+                p1 = item
+                break
+        
+        priority = ['state','state-district','province']
+        if p1.lower() != 'county':
+            priority.append('county')
+        for item in priority:
+            if item in l:
+                outputstr += l[item]
+                break
+        
+        if l['country'].lower() != 'united states':
+            outputstr += ", " + l['country']
+            
+        return outputstr 
+    
+    
+    def update(self, latitude, longitude):
+        self.latitude = latitude
+        self.longitude = longitude
+        
+        geolocator = Nominatim(user_agent="geoapiExercises")
+        self.loc = geolocator.reverse(f"{self.latitude},{self.longitude}", language="en")
+        self.locationstr = self.parse_geolocator()
+        
+        self.timezone = self.get_time_zone()
+        self.sun_times = self.get_sun_times()
+        
+
+        
+        
+global locationInfo
+locationInfo = LocationInfo()
 
 #default strike time = LONG ago, distance = FAR away
 lastStrikeTime = datetime(1,1,1)
 lastStrikeDist = 1000
+
+
+
 
 #######################################################################################
 #                                   DATABASE CONFIGURATION                            #
@@ -101,14 +164,15 @@ def parsedboutput(obs):
 @app.route('/current', methods=['POST','GET']) 
 def index():
     
-    global lastStrikeTime, lastStrikeDist, latitude, longitude, locationstr
+    global lastStrikeTime, lastStrikeDist, locationInfo
     
     #testing code !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    #enddate = datetime(2021,3,1,2,0,0)
-    #lastStrikeTime = datetime(2021,3,1,1,48,23)
-    #lastStrikeDist = 6
+    #enddate = datetime(2021,4,1,2,0,0)
+    enddate = datetime.utcnow()
+    lastStrikeTime = enddate - timedelta(minutes=13)
+    lastStrikeDist = 6
     
-    enddate = datetime.utcnow() #current date
+    #enddate = datetime.utcnow() #current date
     startdate = enddate - timedelta(hours=8)
     
     tableobs = wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate) #observations for plot/table
@@ -116,10 +180,10 @@ def index():
     lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first
     
     #GPS position info
-    if locationstr != "":
-        gpstext = locationstr
+    if locationInfo.locationstr != "":
+        gpstext = locationInfo.locationstr
     else:
-       gpstext = latitude + ", " + longitude 
+       gpstext = locationInfo.latitude + ", " + locationInfo.longitude 
     
     #lightning strike info
     lightningtext = False
@@ -149,7 +213,9 @@ def historical():
             
     #if one date missing- return 14 day window. If both missing, return 14 day window from present
     if not startdate and not enddate:
-        enddate = datetime(2020,6,20,2,53,0) #TO DEPLOY: replace w/ datetime.utcnow()
+        #testing code !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #enddate = datetime(2020,6,20,2,53,0) #TO DEPLOY: replace w/ datetime.utcnow()
+        enddate = datetime.utcnow()
         startdate = enddate - timedelta(days=14)
     elif not startdate:
         startdate = enddate - timedelta(days=14)
@@ -188,12 +254,14 @@ def howto():
     
 #routes to update database with new information
 #73d2be97af11e8ce2144cca61dc2749e643fa6d5 is SHA1 checksum for passphrase required
+def validate_request(request):
+    return sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5"
 
 #update regular observation (T/q/P/rain/wind/strikerate/solar)
 @app.route('/addnewob', methods=['POST'])
 def addnewob():
     
-    if sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5":
+    if validate_request(request):
         
         try:
             cdate = parsedatestr(request.form['date'])
@@ -214,6 +282,21 @@ def addnewob():
         db.session.add(entry)
         db.session.commit()
         
+        #updating top bar image
+        global locationInfo, lastStrikeTime, lastStrikeDist
+        timeSinceStrike = int(np.round((cdate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
+        if timeSinceStrike <= 30 and lastStrikeDist <= 30: #lightning within 30 km and 30 min
+            image = "thunderstorm"
+        elif cprecip >= 1: #rainfall > 1mm/hr recorded
+            image = "rainyday"
+        elif abs(()) <= 3600: #within an hour of sunset
+            image = "sunset"
+        elif cdate >= locationInfo.sun_times[0] and cdate <= locationInfo.sun_times[1]: #between sunrise and sunset (daytime)
+            image = clearday
+        else: #leaves nighttime, no rain/thunderstorm
+            image = clearnight    
+        shutil.copy(f"static/panoramas/{image}.jpg","static/background/default.jpg")
+        
         #return success message to indicate data was added
         return "SUCCESS"
     else:
@@ -227,52 +310,18 @@ def updateGPS():
     
     global latitude, longitude, locationstr
     
-    if sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5":
-        
+    if validate_request(request):
+            
         try:
-            latitude = request.form['latitude']
-            longitude = request.form['longitude']
-            
-            try:
-                geolocator = Nominatim(user_agent="geoapiExercises")
-                loc = geolocator.reverse(f"{latitude},{longitude}", language="en")
-                locationstr = parse_geolocator(loc)
-            except:
-                locationstr = ""
-                
+            locationInfo.update(request.form['latitude'],request.form['longitude'])
             return "SUCCESS"
-            
         except KeyError:
             return "MISSING_POST_FIELD"
             
     else:
         return "INVALID_CREDENTIAL"
 
-
-def parse_geolocator(loc):
-    outputstr = ""
-    l = loc.raw['address']
-    
-    p1 = "none"
-    priority = ['city','town','village','county','hamlet','suburb','neighborhood','road']
-    for item in priority:
-        if item in l:
-            outputstr += l[item] + ", "
-            p1 = item
-            break
-    
-    priority = ['state','state-district','province']
-    if p1.lower() != 'county':
-        priority.append('county')
-    for item in priority:
-        if item in l:
-            outputstr += l[item]
-            break
-    
-    if l['country'].lower() != 'united states':
-        outputstr += ", " + l['country']
         
-    return outputstr    
         
 
 #new lightning strike
@@ -281,11 +330,15 @@ def parse_geolocator(loc):
 def strikereport():
     global lastStrikeTime, lastStrikeDist
     
-    if sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5":
+    if validate_request(request):
         
         try:
             lastStrikeTime = parsedatestr(request.form['date'])
             lastStrikeDist = int(np.round(float(request.form['distance'])))
+            
+            #switch top bar image to thunderstorm if strike within 30 km
+            if lastStrikeDist <= 30:
+                shutil.copy(f"static/panoramas/thunderstorm.jpg","static/background/default.jpg")
             
             #return success message to indicate data was added
             return "SUCCESS"
@@ -442,7 +495,7 @@ def observations_plot(obstoplot):
 
 #time zone configuration
 fromzone = tz.gettz('UTC')
-tozone = tz.gettz('America/New York')
+tozone = tz.gettz('America/Chicago')
 def replacetimezone(inputdate,inputzone,outputzone):
     
     inputdate = inputdate.replace(tzinfo=inputzone)

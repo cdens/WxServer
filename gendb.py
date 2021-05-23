@@ -41,8 +41,7 @@ def csv_to_lists(csvdir):
     #getting list of files to read from
     allfiles = os.listdir(csvdir)
     allfiles.sort() #numerical (chronological) order
-    
-    
+        
     #reading in data from CSV files
     dates = []
     ta = []
