@@ -9,10 +9,75 @@
 {% block body %}
 <div class="content">
 	<h2 style="text-align:center">Overview</h2>
-    Describing functions here
-	
-    <h2 style="text-align:center">Instrumentation</h2>
-    Raspberry Pi stuff here
+    
+    The PiWx Station is a collection of sensors integrated with a Raspberry Pi and controlled with Python. The code running on the weather station is available on <a href="https://www.github.com/cdens/wxcode">Github</a>. The weather station is configured to sample conditions every 15 minutes, and data are stored locally in daily CSV files and uploaded (internet connectivity permitting) to a remote server with an incorporated database. The following items are currently measured by the PiWx Station: temperature (<span>&#176;</span>F), relative humidity (%), pressure (mb), wind speed (mph), wind direction (<span>&#176;</span>T), rainfall rate (mm/hr), and lightning strike rate (per hour).
+    </ul>
+    
+    <br></br>
+    <img src="{{ url_for('static', filename='photos/overview.jpeg') }}" style='width: 50%; object-fit: contain'/>
+    <br></br>
+	<br></br>
+    
+    
+    <h2> Temperature/Humidity/Pressure </h2>
+    Temperature (<span>&#176;</span>F), relative humidity (%), and pressure (mb) are measured with a <a href="https://www.amazon.com/gp/product/B07P4CWGGK/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1">BME 280</a> environmental sensor via I2C protocol. The sensor is located on the underside of the station where it is sheltered from sun and rain to provide the most accurate readings.
+    
+	<br></br>
+    <img src="{{ url_for('static', filename='photos/tqp.jpeg') }}" style='width: 50%; object-fit: contain'/>
+	<br></br>
+	<br></br>
+    
+    
+    <h2> Anemometer </h2>
+    Wind speed is measured with a custom-built three-cupped anemometer. As winds spin the anemometer, magnets connected to the shaft pass a <a href="https://www.amazon.com/gp/product/B07SGBW87J/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1">Hall Effect sensor</a>, which increases the voltage on a line connected to a Raspberry Pi GPIO pin each time the magnet passes. The station-side software counts the number of voltage changes on the line over a 30-second duration to calculate rotations per minute and from this value determines the wind speed.
+    
+	<br></br>
+    <img src="{{ url_for('static', filename='photos/anemometer.jpeg') }}" style='width: 50%; object-fit: contain'/>
+	<br></br>
+	<br></br>
+    
+    
+    <h2> Wind Vane </h2>
+    Wind direction is measured with a custom built wind vane. A magnet attached to the shaft of the wind vane sits over one of eight <a href="https://www.amazon.com/gp/product/B07MLZHWLY/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1">reed switches</a>, which close a circuit when in the presence of a magnetic field and are otherwise open. The reed switches are connected to an <a href="https://www.amazon.com/gp/product/B01HGCSGXM/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1">eight-channel analog to digital converter</a>, which measures the voltage of each connection. The station-side software receives these eight voltages and uses them to identify the position of the magnet and corresponding wind direction. 
+    
+	<br></br>
+    <img src="{{ url_for('static', filename='photos/windvane.jpeg') }}" style='width: 50%; object-fit: contain'/>
+    <img src="{{ url_for('static', filename='photos/windvane_guts.jpeg') }}" style='width: 50%; object-fit: contain'/>
+	<br></br>
+	<br></br>
+    
+    
+    <h2> Rain Gauge </h2>
+    Rainfall is measured with a custom built tipping bucket style rain gauge. This gauge funnels rain into a small two-chambered bucket balanced on a fulcrum. Each time a bucket fills (the gauge was designed for this to correspond to 1 mm of rainfall), the bucket tips and empties its water and the other bucket begins to fill. An attached magnet and an additional <a href="https://www.amazon.com/gp/product/B07SGBW87J/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1">Hall Effect sensor</a> enable the weather station to record each 1 mm of total rainfall and calculate rainfall rates.
+    
+	<br></br>
+    <img src="{{ url_for('static', filename='photos/raingauge.jpeg') }}" style='width: 50%; object-fit: contain'/>
+    <img src="{{ url_for('static', filename='photos/raingauge_guts.jpeg') }}" style='width: 50%; object-fit: contain'/>
+	<br></br>
+	<br></br>
+    
+    
+    
+    <h2> Lightning Detector </h2>
+    
+    Lightning is observed with a <a href="https://www.amazon.com/gp/product/B07WFKWGC8/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1">Sparkfun AS3935 Lightning Detector</a>. This sensor includes a small antenna which measures electromagnetic pulses (EMPs) produced by lightning strikes in the 500 kHz band and estimates distance from the lightning strike. The sensor is connected to the weather station via a 14" rod, which provides sufficient standoff distance from the Raspberry Pi and other sensors to prevent the detector from picking up false positives.
+    
+	<br></br>
+    <img src="{{ url_for('static', filename='photos/lightning.jpeg') }}" style='width: 50%; object-fit: contain'/>
+	<br></br>
+	<br></br>
+    
+    
+    <h2> Camera </h2>
+    A tower in the center of the weather station provides a waterproof housing for the <a href="https://www.amazon.com/gp/product/B07JPLV5K1/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1">5MP/1080p Raspberry Pi photo/video camera</a>. Station-side software allows commands to be sent remotely to capture videos, take individual photographs, or take time lapse videos with a customizable interval and duration. The housing can be rotated 360<span>&#176;</span>, enabling the camera to document sunrises, sunsets, or storms and other weather phenomena in any direction. 
+    
+	<br></br>
+    <img src="{{ url_for('static', filename='photos/camera.jpeg') }}" style='width: 50%; object-fit: contain'/>
+	<br></br>
+    <br></br>
+    <br></br>
+    <br></br>
+    
     
 </div>
 {% endblock %}
