@@ -429,7 +429,7 @@ def observations_plot(obstoplot):
         p.scatter(x="date", y="pres", source=source, color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
         
         #wind speed
-        p.extra_y_ranges["wspd"] = Range1d(start=np.floor(np.min(wspd))-1, end=np.ceil(np.max(wspd))+1)
+        p.extra_y_ranges["wspd"] = Range1d(start=0, end=np.ceil(np.max(np.array([np.max(wspd), 10]))+1))
         p.add_layout(LinearAxis(y_range_name="wspd", axis_line_color="orange"), 'left')
         p.line(x="date", y="wspd", source=source, line_color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
         p.scatter(x="date", y="wspd", source=source, color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
