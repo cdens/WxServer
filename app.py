@@ -414,30 +414,30 @@ def observations_plot(obstoplot):
         p.extra_y_ranges["temp"] = Range1d(start=np.floor(np.min(temp))-1, end=np.ceil(np.max(temp))+1)
         p.add_layout(LinearAxis(y_range_name="temp", axis_line_color="red"), 'left')
         p.line(x="date", y="temp", source=source, line_color="red", name="Temperature", y_range_name="temp", legend_label="Temperature")
-        p.circle(x="date", y="temp", source=source, color="red", name="Temperature", y_range_name="temp",  legend_label="Temperature")
+        p.scatter(x="date", y="temp", source=source, color="red", name="Temperature", y_range_name="temp",  legend_label="Temperature")
         
         #humidity
         p.extra_y_ranges["rh"] = Range1d(start=np.floor(np.min(rh))-1, end=np.ceil(np.max(rh))+1)
         p.add_layout(LinearAxis(y_range_name="rh", axis_line_color="blue"), 'left')
         p.line(x="date", y="rh", source=source, line_color="blue", name="Humidity", y_range_name="rh", legend_label="Humidity")
-        p.circle(x="date", y="rh", source=source, color="blue", name="Humidity", y_range_name="rh", legend_label="Humidity")
+        p.scatter(x="date", y="rh", source=source, color="blue", name="Humidity", y_range_name="rh", legend_label="Humidity")
         
         #pressure
         p.extra_y_ranges["pres"] = Range1d(start=np.floor(np.min(pres))-1, end=np.ceil(np.max(pres))+1)
         p.add_layout(LinearAxis(y_range_name="pres", axis_line_color="green"), 'left')
         p.line(x="date", y="pres", source=source, line_color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
-        p.circle(x="date", y="pres", source=source, color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
+        p.scatter(x="date", y="pres", source=source, color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
         
         #wind speed
         p.extra_y_ranges["wspd"] = Range1d(start=np.floor(np.min(wspd))-1, end=np.ceil(np.max(wspd))+1)
         p.add_layout(LinearAxis(y_range_name="wspd", axis_line_color="orange"), 'left')
         p.line(x="date", y="wspd", source=source, line_color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
-        p.circle(x="date", y="wspd", source=source, color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
+        p.scatter(x="date", y="wspd", source=source, color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
         
         #wind direction
-        p.extra_y_ranges["wdir"] = Range1d(start=np.floor(np.min(wdir))-1, end=np.ceil(np.max(wdir))+1)
+        p.extra_y_ranges["wdir"] = Range1d(start=-5, end=365)
         p.add_layout(LinearAxis(y_range_name="wdir", axis_line_color="purple"), 'left')
-        p.circle(x="date", y="wdir", source=source, color="purple", name="Wind Direction", y_range_name="wdir", legend_label="Wind Direction")
+        p.scatter(x="date", y="wdir", source=source, color="purple", name="Wind Direction", y_range_name="wdir", legend_label="Wind Direction")
         
         #precipitation 
         p.extra_y_ranges["precip"] = Range1d(start=np.floor(np.min(precip)), end=np.ceil(np.max(precip))+1)
@@ -449,7 +449,7 @@ def observations_plot(obstoplot):
         # p.extra_y_ranges["solar"] = Range1d(start=np.floor(np.min(solar))-1, end=np.ceil(np.max(solar))+1)
         # p.add_layout(LinearAxis(y_range_name="solar", axis_line_color="yellow"), 'left')
         # p.line(x="date", y="solar", source=source, line_color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
-        # p.circle(x="date", y="solar", source=source, color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
+        # p.scatter(x="date", y="solar", source=source, color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
         
         #lightning strikes
         p.extra_y_ranges["strikes"] = Range1d(start=np.floor(np.min(strikes)), end=np.ceil(np.max(strikes))+1)
