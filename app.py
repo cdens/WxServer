@@ -139,7 +139,7 @@ def parsedboutput(obs):
     with app.app_context():
         for entry in obs:
             date.append(replacetimezone(entry.date,fromzone,tozone)) #local time
-            temp.append(entry.temp)
+            temp.append(entry.temp) #convert to F
             rh.append(entry.rh)
             pres.append(entry.pres)
             wspd.append(entry.wspd)
@@ -148,7 +148,9 @@ def parsedboutput(obs):
             solar.append(entry.solar)
             strikes.append(entry.strikes)
             
-    return date,temp,rh,pres,wspd,wdir,precip,solar,strikes
+    tempF = [(t*9/5 + 32) for t in temp]
+            
+    return date,tempF,rh,pres,wspd,wdir,precip,solar,strikes
 
 
     
@@ -168,13 +170,13 @@ def index():
     global lastStrikeTime, lastStrikeDist, locationInfo
     
     enddate = datetime.utcnow() #current date
-    startdate = enddate - timedelta(hours=8)
+    startdate = enddate - timedelta(hours=4)
     
     with app.app_context():
         
         tableobs = wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate) #observations for plot/table
         obsplot = observations_plot(tableobs) #building plot components given observations
-        lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first
+        lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first 
         
         #GPS position info
         if locationInfo.locationstr != "":
@@ -399,8 +401,8 @@ def observations_plot(obstoplot):
     try:
         #parsing out observations in range to be plotted
         date,temp,rh,pres,wspd,wdir,precip,solar,strikes = parsedboutput(obstoplot)
-        source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "solar":solar, "strikes":strikes}) #organizing data into columndatasource format
-        
+        # source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "solar":solar, "strikes":strikes}) #organizing data into columndatasource format
+        source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "strikes":strikes}) #organizing data into columndatasource format
         
         #initializing figure
         p = figure(height=400, width=1500, title='', x_axis_type="datetime", toolbar_location="above",
@@ -437,17 +439,17 @@ def observations_plot(obstoplot):
         p.add_layout(LinearAxis(y_range_name="wdir", axis_line_color="purple"), 'left')
         p.circle(x="date", y="wdir", source=source, color="purple", name="Wind Direction", y_range_name="wdir", legend_label="Wind Direction")
         
-        #precipitation TODO- MAKE BAR
+        #precipitation 
         p.extra_y_ranges["precip"] = Range1d(start=np.floor(np.min(precip)), end=np.ceil(np.max(precip))+1)
         p.add_layout(LinearAxis(y_range_name="precip", axis_line_color="blue"), 'left')
         p.vbar(x="date",top="precip", width = .9, fill_alpha = .5, fill_color = 'blue', line_alpha = .5, line_color='blue', source=source, name="Precipitation", y_range_name="precip", legend_label="Precipitation")
     
         
-        #solar radiation
-        p.extra_y_ranges["solar"] = Range1d(start=np.floor(np.min(solar))-1, end=np.ceil(np.max(solar))+1)
-        p.add_layout(LinearAxis(y_range_name="solar", axis_line_color="yellow"), 'left')
-        p.line(x="date", y="solar", source=source, line_color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
-        p.circle(x="date", y="solar", source=source, color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
+        # #solar radiation
+        # p.extra_y_ranges["solar"] = Range1d(start=np.floor(np.min(solar))-1, end=np.ceil(np.max(solar))+1)
+        # p.add_layout(LinearAxis(y_range_name="solar", axis_line_color="yellow"), 'left')
+        # p.line(x="date", y="solar", source=source, line_color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
+        # p.circle(x="date", y="solar", source=source, color="yellow", name="Solar Radiation", y_range_name="solar", legend_label="Solar Radiation")
         
         #lightning strikes
         p.extra_y_ranges["strikes"] = Range1d(start=np.floor(np.min(strikes)), end=np.ceil(np.max(strikes))+1)
@@ -462,14 +464,13 @@ def observations_plot(obstoplot):
         
         #adding hover tool
         TOOLTIPS=[("Date", "@date{%Y-%m-%d %H:%M}"), 
-                    ("Temperature (C)", "@temp{00.0}"), 
+                    ("Temperature (F)", "@temp{00.0}"), 
                     ("Humidity (%)", "@rh{00.0}"), 
                     ("Pressure (mb)", "@pres{0000.0}"),
                     ("Wind Speed (mph)", "@wspd{0.0}"),
                     ("Wind Direction", "@wdir{000}"),
-                    ("Precipitation (mm/hr)", "@precip{0.0}"),
-                    ("Solar Radiation", "@solar"),
-                    ("Lightning Strikes (per hour)", "@strikes{0.0}")] #setting tooltips for interactive hover
+                    ("Precipitation (mm/hr)", "@precip{0.0}"), #("Solar Radiation", "@solar"),
+                    ("Lightning (strikes/hr)", "@strikes{0.0}")] #setting tooltips for interactive hover
         hovertool = HoverTool(tooltips=TOOLTIPS, formatters={'@date': 'datetime'}) # use 'datetime' formatter for '@date' field
         p.add_tools(hovertool)
         
