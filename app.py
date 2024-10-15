@@ -212,7 +212,7 @@ def historical():
             startdate = False
             enddate = False
                 
-        #if one date missing- return 14 day window. If both missing, return 14 day window from present
+        #if one date missing- return 14 day window. If both missing, return 14 day window from present 
         if not startdate and not enddate:
             enddate = datetime.utcnow()
             startdate = enddate - timedelta(days=14)
