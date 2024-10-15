@@ -40,7 +40,7 @@ class LocationInfo():
     def __init__(self):
         self.latitude = "30.37"
         self.longitude = "-87.34" 
-        self.locationstr = "Pensacola, FL, USA"
+        self.locationstr = "Jacksonville, FL, USA"
         
         self.timezone = self.get_time_zone()
         self.sun_times = self.get_sun_times()
@@ -136,16 +136,17 @@ def parsedboutput(obs):
     solar = []
     strikes = []
     
-    for entry in obs:
-        date.append(replacetimezone(entry.date,fromzone,tozone)) #local time
-        temp.append(entry.temp)
-        rh.append(entry.rh)
-        pres.append(entry.pres)
-        wspd.append(entry.wspd)
-        wdir.append(entry.wdir)
-        precip.append(entry.precip)
-        solar.append(entry.solar)
-        strikes.append(entry.strikes)
+    with app.app_context():
+        for entry in obs:
+            date.append(replacetimezone(entry.date,fromzone,tozone)) #local time
+            temp.append(entry.temp)
+            rh.append(entry.rh)
+            pres.append(entry.pres)
+            wspd.append(entry.wspd)
+            wdir.append(entry.wdir)
+            precip.append(entry.precip)
+            solar.append(entry.solar)
+            strikes.append(entry.strikes)
             
     return date,temp,rh,pres,wspd,wdir,precip,solar,strikes
 
@@ -166,33 +167,34 @@ def index():
     
     global lastStrikeTime, lastStrikeDist, locationInfo
     
-    #testing code !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    #enddate = datetime(2021,4,1,2,0,0)
+    #initializing with no known last strikes
     enddate = datetime.utcnow()
-    lastStrikeTime = enddate - timedelta(minutes=13)
-    lastStrikeDist = 6
+    lastStrikeTime = enddate - timedelta(weeks=200)
+    lastStrikeDist = 100
     
     #enddate = datetime.utcnow() #current date
     startdate = enddate - timedelta(hours=8)
     
-    tableobs = wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate) #observations for plot/table
-    obsplot = observations_plot(tableobs) #building plot components given observations
-    lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first
-    
-    #GPS position info
-    if locationInfo.locationstr != "":
-        gpstext = locationInfo.locationstr
-    else:
-       gpstext = locationInfo.latitude + ", " + locationInfo.longitude 
-    
-    #lightning strike info
-    lightningtext = False
-    timeSinceStrike = int(np.round((enddate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
-    if timeSinceStrike <= 30 and lastStrikeDist <= 30: #within 30 mins/30 km
-        lightningtext = f"Lightning detected {timeSinceStrike} minutes ago, {lastStrikeDist} km away"
-    
-    #GET request- show content
-    return render_template('current.html',lastob=lastob, div_plot=obsplot, tableobs=tableobs, lightningtext=lightningtext, gpstext=gpstext) 
+    with app.app_context():
+        
+        tableobs = wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate) #observations for plot/table
+        obsplot = observations_plot(tableobs) #building plot components given observations
+        lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first
+        
+        #GPS position info
+        if locationInfo.locationstr != "":
+            gpstext = locationInfo.locationstr
+        else:
+           gpstext = locationInfo.latitude + ", " + locationInfo.longitude 
+        
+        #lightning strike info
+        lightningtext = False
+        timeSinceStrike = int(np.round((enddate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
+        if timeSinceStrike <= 30 and lastStrikeDist <= 30: #within 30 mins/30 km
+            lightningtext = f"Lightning detected {timeSinceStrike} minutes ago, {lastStrikeDist} km away"
+        
+        #GET request- show content
+        return render_template('current.html',lastob=lastob, div_plot=obsplot, tableobs=tableobs, lightningtext=lightningtext, gpstext=gpstext) 
     
 
     
@@ -200,41 +202,41 @@ def index():
 @app.route('/historical', methods=['POST','GET']) #create index route so it doesn't ERROR 404
 def historical():
     
-    #parsing input arguments 
-    if request.method == 'GET':
-        startdate = parsedatestr(request.args.get('start',False))
-        enddate = parsedatestr(request.args.get('end',False))
-    elif request.method == 'POST':
-        startdate = parsedatestr(request.form['start'])
-        enddate = parsedatestr(request.form['end'])
-    else:
-        startdate = False
-        enddate = False
-            
-    #if one date missing- return 14 day window. If both missing, return 14 day window from present
-    if not startdate and not enddate:
-        #testing code !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        #enddate = datetime(2020,6,20,2,53,0) #TO DEPLOY: replace w/ datetime.utcnow()
-        enddate = datetime.utcnow()
-        startdate = enddate - timedelta(days=14)
-    elif not startdate:
-        startdate = enddate - timedelta(days=14)
-    elif not enddate:
-        enddate = startdate + timedelta(days=14)
-    elif startdate == enddate:
-        startdate -= timedelta(days=1)
-        enddate += timedelta(days=1)
-            
-    #pulling observations
-    tableobs = wxobs.query.order_by(wxobs.id).filter((wxobs.date >= startdate) & (wxobs.date <= enddate)) #observations for plot/table
-    obsplot = observations_plot(tableobs) #building plot components given observations
-    
-    #pulling date constraints for date selection tool
-    dates = {}
-    dates['startdate'] = wxobs.query.order_by(wxobs.id).first().date.strftime("%Y-%m-%d")
-    dates['enddate'] = wxobs.query.order_by(-wxobs.id).first().date.strftime("%Y-%m-%d")
-    
-    return render_template('historical.html', div_plot=obsplot, tableobs=tableobs, dates=dates) #GET request- show content
+    with app.app_context():
+        
+        #parsing input arguments 
+        if request.method == 'GET':
+            startdate = parsedatestr(request.args.get('start',False))
+            enddate = parsedatestr(request.args.get('end',False))
+        elif request.method == 'POST':
+            startdate = parsedatestr(request.form['start'])
+            enddate = parsedatestr(request.form['end'])
+        else:
+            startdate = False
+            enddate = False
+                
+        #if one date missing- return 14 day window. If both missing, return 14 day window from present
+        if not startdate and not enddate:
+            enddate = datetime.utcnow()
+            startdate = enddate - timedelta(days=14)
+        elif not startdate:
+            startdate = enddate - timedelta(days=14)
+        elif not enddate:
+            enddate = startdate + timedelta(days=14)
+        elif startdate == enddate:
+            startdate -= timedelta(days=1)
+            enddate += timedelta(days=1)
+                
+        #pulling observations
+        tableobs = wxobs.query.order_by(wxobs.id).filter((wxobs.date >= startdate) & (wxobs.date <= enddate)) #observations for plot/table
+        obsplot = observations_plot(tableobs) #building plot components given observations
+        
+        #pulling date constraints for date selection tool
+        dates = {}
+        dates['startdate'] = wxobs.query.order_by(wxobs.id).first().date.strftime("%Y-%m-%d")
+        dates['enddate'] = wxobs.query.order_by(-wxobs.id).first().date.strftime("%Y-%m-%d")
+        
+        return render_template('historical.html', div_plot=obsplot, tableobs=tableobs, dates=dates) #GET request- show content
     
     
     
@@ -253,7 +255,7 @@ def howto():
     
     
 #routes to update database with new information
-#73d2be97af11e8ce2144cca61dc2749e643fa6d5 is SHA1 checksum for passphrase required
+#73d2be97af11e8ce2144cca61dc2749e643fa6d5 is SHA1 checksum for passphrase required (change this for your own site...)
 def validate_request(request):
     return sha1(request.form['credential'].encode('utf-8')).hexdigest() == "73d2be97af11e8ce2144cca61dc2749e643fa6d5"
 
@@ -263,42 +265,44 @@ def addnewob():
     
     if validate_request(request):
         
-        try:
-            cdate = parsedatestr(request.form['date'])
-            cta = request.form["ta"]
-            crh = request.form["rh"]
-            cpres = request.form["pres"]
-            cwspd = request.form["wspd"]
-            cwdir = request.form["wdir"]
-            csolar = request.form["solar"]
-            cprecip = request.form["precip"]
-            cstrikes = request.form["strikes"]
-        except KeyError:
-            return "MISSING_POST_FIELD"
+        with app.app_context():
             
-        #adding to database
-        lastID = wxobs.query.order_by(-wxobs.id).first().id
-        entry = wxobs(id=lastID + 1, date=cdate, temp=cta, rh=crh, pres=cpres, wspd = cwspd, wdir = cwdir, precip=cprecip, solar=csolar, strikes=cstrikes)
-        db.session.add(entry)
-        db.session.commit()
-        
-        #updating top bar image
-        global locationInfo, lastStrikeTime, lastStrikeDist
-        timeSinceStrike = int(np.round((cdate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
-        if timeSinceStrike <= 30 and lastStrikeDist <= 30: #lightning within 30 km and 30 min
-            image = "thunderstorm"
-        elif cprecip >= 1: #rainfall > 1mm/hr recorded
-            image = "rainyday"
-        elif abs(()) <= 3600: #within an hour of sunset
-            image = "sunset"
-        elif cdate >= locationInfo.sun_times[0] and cdate <= locationInfo.sun_times[1]: #between sunrise and sunset (daytime)
-            image = clearday
-        else: #leaves nighttime, no rain/thunderstorm
-            image = clearnight    
-        shutil.copy(f"static/panoramas/{image}.jpg","static/background/default.jpg")
-        
-        #return success message to indicate data was added
-        return "SUCCESS"
+            try:
+                cdate = parsedatestr(request.form['date'])
+                cta = request.form["ta"]
+                crh = request.form["rh"]
+                cpres = request.form["pres"]
+                cwspd = request.form["wspd"]
+                cwdir = request.form["wdir"]
+                csolar = request.form["solar"]
+                cprecip = request.form["precip"]
+                cstrikes = request.form["strikes"]
+            except KeyError:
+                return "MISSING_POST_FIELD"
+                
+            #adding to database
+            lastID = wxobs.query.order_by(-wxobs.id).first().id
+            entry = wxobs(id=lastID + 1, date=cdate, temp=cta, rh=crh, pres=cpres, wspd = cwspd, wdir = cwdir, precip=cprecip, solar=csolar, strikes=cstrikes)
+            db.session.add(entry)
+            db.session.commit()
+            
+            #updating top bar image
+            global locationInfo, lastStrikeTime, lastStrikeDist
+            timeSinceStrike = int(np.round((cdate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
+            if timeSinceStrike <= 30 and lastStrikeDist <= 30: #lightning within 30 km and 30 min
+                image = "thunderstorm"
+            elif cprecip >= 1: #rainfall > 1mm/hr recorded
+                image = "rainyday"
+            elif abs(()) <= 3600: #within an hour of sunset
+                image = "sunset"
+            elif cdate >= locationInfo.sun_times[0] and cdate <= locationInfo.sun_times[1]: #between sunrise and sunset (daytime)
+                image = clearday
+            else: #leaves nighttime, no rain/thunderstorm
+                image = clearnight    
+            shutil.copy(f"static/panoramas/{image}.jpg","static/background/default.jpg")
+            
+            #return success message to indicate data was added
+            return "SUCCESS"
     else:
         return "INVALID_CREDENTIAL"
 
@@ -368,7 +372,7 @@ gridcolor = None
 
 def plot_styler(p):
     
-    xtickformat = DatetimeTickFormatter(hourmin = ['%H:%M'], hours = ['%H:%M'], days = ['%d %b'], months = ['%b %Y'])
+    xtickformat = DatetimeTickFormatter(hourmin = '%H:%M', hours = '%H:%M', days = '%d %b', months = '%b %Y')
     p.sizing_mode = fig_sizing_mode
     p.title.text_font_size = chart_title_font_size
     p.title.text_font  = chart_font
@@ -477,7 +481,7 @@ def observations_plot(obstoplot):
         plot_styler(p) #applying global stylings for plot
         
         script,div = components(p) #pulling javascript/html components to embed in webpage
-        
+                
         return script + div
     
     except ValueError:

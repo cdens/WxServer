@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+bokeh==2.4.3
+timezonefinder==5.2.0
+pytz==2020.1
+suntime==1.2.5
+numpy
+geopy==2.0.0
+netCDF4==1.5.3

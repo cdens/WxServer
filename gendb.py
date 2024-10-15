@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from app import db
+from app import app,db
 from datetime import datetime, timedelta
 import os
 import numpy as np
@@ -22,7 +22,7 @@ def readfile(filename):
         for line in f:
             line = line.strip().split(',')
             
-            dates.append(datetime.strptime(f"{line[0]}", "%Y%m%d %H:%M:%S"))
+            dates.append(datetime.strptime(f"{line[0]}", "%Y%m%d%H%M%S"))
             ta.append(float(line[1]))
             rh.append(float(line[2]))
             pres.append(float(line[3]))
@@ -55,7 +55,7 @@ def csv_to_lists(csvdir):
     
     for file in allfiles:
         
-        if file[:3] == "d20": #only csv files
+        if file[:3] == "WxO": #only csv files
             fdates, fta, frh, fpres, fwspd, fwdir, fsolar, fprecip, fstrikes = readfile(csvdir + file)
                 
             for (cdate,cta,crh,cpres,cwspd,cwdir,csolar,cprecip,cstrikes) in zip(fdates, fta, frh, fpres, fwspd, fwdir, fsolar, fprecip, fstrikes):
@@ -77,12 +77,14 @@ def csv_to_lists(csvdir):
 if __name__ == "__main__":
     
     #reading CSV files (WxStation formatted) into lists by variable
-    csvdir = "../wxdata/"
+    csvdir = "../wxdata/initdata_2024/"
     dates, ta, rh, pres, wspd, wdir, solar, precip, strikes = csv_to_lists(csvdir)
     
     #creating db
     if os.path.exists('wxobs.db'):
         os.remove('wxobs.db')
+        
+    app.app_context().push()
     db.create_all()
     
     #appending data to database
