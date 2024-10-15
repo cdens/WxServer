@@ -167,12 +167,7 @@ def index():
     
     global lastStrikeTime, lastStrikeDist, locationInfo
     
-    #initializing with no known last strikes
-    enddate = datetime.utcnow()
-    lastStrikeTime = enddate - timedelta(weeks=200)
-    lastStrikeDist = 100
-    
-    #enddate = datetime.utcnow() #current date
+    enddate = datetime.utcnow() #current date
     startdate = enddate - timedelta(hours=8)
     
     with app.app_context():

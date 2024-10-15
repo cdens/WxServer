@@ -22,7 +22,7 @@
 			<th>{{ lastob.date.strftime("%Y-%m-%d %H:%M") }}</th>
 		</tr>
 		<tr>
-			<td>Temperature (<sup>o</sup>C):</td>
+			<td>Temperature (<sup>o</sup>F):</td>
 			<td>{{ round(lastob.temp,1) }}</td>
 		</tr>
 		<tr>
@@ -34,7 +34,7 @@
 			<td>{{ round(lastob.pres,1) }}</td>
 		</tr>
 		<tr>
-			<td>Wind Speed (m/s):</td>
+			<td>Wind Speed (mph):</td>
 			<td>{{ round(lastob.wspd,1) }}</td>
 		</tr>
 		<tr>
@@ -42,7 +42,7 @@
 			<td>{{ round(lastob.wdir,1) }}</td>
 		</tr>
 		<tr>
-			<td>Rainfall (cm):</td>
+			<td>Rainfall (mm/hr):</td>
 			<td>{{ round(lastob.precip,1) }}</td>
 		</tr>
 		<tr>
@@ -50,7 +50,7 @@
 			<td>{{ round(lastob.solar,1) }}</td>
 		</tr>
 		<tr>
-			<td>Lightning Strikes:</td>
+			<td>Lightning (strikes/hr):</td>
 			<td>{{ round(lastob.strikes,1) }}</td>
 		</tr>
 	</table>
@@ -68,14 +68,14 @@
         <thead>
             <tr>
     			<th>Date/Time (UTC)</th>
-    			<th>Temperature (<sup>o</sup>C)</th>
+    			<th>Temperature (<sup>o</sup>F)</th>
     			<th>Humidity (%)</th>
     			<th>Pressure (mb)</th>
-                <th>Wind Speed (m/s)</th>
+                <th>Wind Speed (mph)</th>
                 <th>Wind Direction (<sup>o</sup>T)</th>
-                <th>Rainfall (cm)</th>
+                <th>Rainfall (mm/hr)</th>
                 <th>Solar Radiation (J/m<sup>2</sup>)</th>
-                <th>Lightning Strikes</th>
+                <th>Lightning (strikes/hr)</th>
     		</tr>
         </thead>
         <tbody>
