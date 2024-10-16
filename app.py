@@ -197,7 +197,11 @@ def index():
         
         is_mobile = user_on_mobile()
         obsplot = observations_plot(tableobs, is_mobile) #building plot components given observations
-        lastob = tableobs[0] #most recent data point
+        
+        if len(tableobs) > 0:
+            lastob = tableobs[0] #most recent data point
+        else: #no data in table from last 4 hours
+            lastob = parsedboutput([wxobs.query.order_by(-wxobs.id).first()])[0]
         
         #GPS position info
         if locationInfo.locationstr != "":
