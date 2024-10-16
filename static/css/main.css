@@ -193,6 +193,15 @@ h3 {
 table{
     display: inline;
     float: center;
+    table-layout:fixed; /*mobile add*/
+}
+
+@media only screen and (max-width: 480px) { /*mobile add*/
+    /* horizontal scrollbar for tables if mobile screen */
+    .tablemobile {
+        overflow-x: auto;
+        display: block;
+    }
 }
 
 th:first-of-type {
@@ -218,6 +227,9 @@ th, td {
     border-bottom: 1px solid #ddd;
     padding: 5px 20px;
     text-align: left;
+    overflow: hidden; /*mobile add*/
+    text-overflow: ellipsis; /*mobile add*/
+    word-wrap: break-word;/*mobile add*/
 }
 
 
