@@ -125,6 +125,21 @@ class wxobs(db.Model): #class for weather observations database
         return f'Entry {self.id}: {self.date.strftime("%y%m%d %H:%M:%S")}'
         
         
+#stores dataset as individual lists of time series AND as list of individual observations 
+class ObservationList():
+    def __init__(self, date, temp, rh, pres, wspd, wdir, precip, solar, strikes):
+        self.date = date
+        self.temp = temp
+        self.rh = rh
+        self.pres = pres
+        self.wspd = wspd
+        self.wdir = wdir
+        self.precip = precip
+        self.solar = solar
+        self.strikes = strikes
+    
+        
+#returns an ObservationList containing the data
 def parsedboutput(obs):
     date = []
     temp = []
@@ -152,23 +167,14 @@ def parsedboutput(obs):
             strikes.append(entry.strikes)
             
     tempF = [(t*9/5 + 32) for t in temp]
-            
-    return date,tempF,rh,pres,wspd,wdir,precip,solar,strikes
-
-
-def reformat_dates(db_in):
-
-    db_out = db_in
-    fromzone = tz.gettz('UTC')
-    tozone = tz.gettz(locationInfo.timezone)
-    try:
-        for i,ob in enumerate(db_out):
-            db_out[i].date = replacetimezone(ob.date,fromzone,tozone)
-    except TypeError: #object not iterable = only one entry
-        db_out.date = replacetimezone(db_out.date,fromzone,tozone)
-        
-    return db_out
     
+    ob_list = []
+    for cdate,ctemp,crh,cpres,cwspd,cwdir,cprecip,csolar,cstrikes in zip(date, tempF, rh, pres, wspd, wdir, precip, solar, strikes):
+        ob_list.append(ObservationList(cdate,ctemp,crh,cpres,cwspd,cwdir,cprecip,csolar,cstrikes))
+            
+    return ob_list
+
+
         
         
 #######################################################################################
@@ -187,13 +193,9 @@ def index():
     
     with app.app_context():
         
-        tableobs = wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate) #observations for plot/table
+        tableobs = parsedboutput(wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate)) #observations for plot/table
         obsplot = observations_plot(tableobs) #building plot components given observations
-        lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first
-        
-        #convert dates to local time 
-        tableobs = reformat_dates(tableobs) 
-        lastob = reformat_dates(lastob) 
+        lastob = parsedboutput([wxobs.query.order_by(-wxobs.id).first()])[0] #orders by recent ob first *in brackets to make iterable
         
         #GPS position info
         if locationInfo.locationstr != "":
@@ -242,10 +244,9 @@ def historical():
             enddate += timedelta(days=1)
                 
         #pulling observations
-        tableobs = wxobs.query.order_by(wxobs.id).filter((wxobs.date >= startdate) & (wxobs.date <= enddate)) #observations for plot/table
-        obsplot = observations_plot(tableobs) #building plot components given observations
+        tableobs = parsedboutput(wxobs.query.order_by(wxobs.id).filter((wxobs.date >= startdate) & (wxobs.date <= enddate))) #observations for plot/table
         
-        tableobs = reformat_dates(tableobs) #convert dates to local time
+        obsplot = observations_plot(tableobs) #building plot components given observations
         
         #pulling date constraints for date selection tool
         dates = {}
@@ -424,12 +425,19 @@ def plot_styler(p):
 
     
     
-def observations_plot(obstoplot):
+def observations_plot(obs):
     
     try:
-        #parsing out observations in range to be plotted
-        date,temp,rh,pres,wspd,wdir,precip,solar,strikes = parsedboutput(obstoplot)
         # source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "solar":solar, "strikes":strikes}) #organizing data into columndatasource format
+        date = [ob.date for ob in obs]
+        temp = [ob.temp for ob in obs]
+        rh = [ob.rh for ob in obs]
+        pres = [ob.pres for ob in obs]
+        wspd = [ob.wspd for ob in obs]
+        wdir = [ob.wdir for ob in obs]
+        precip = [ob.precip for ob in obs]
+        # solar = []
+        strikes = [ob.strikes for ob in obs]
         source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "strikes":strikes}) #organizing data into columndatasource format
         
         #initializing figure
