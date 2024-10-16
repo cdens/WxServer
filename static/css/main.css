@@ -1,3 +1,10 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
 body, html {
     font-family: sans-serif;
     margin: 0;
@@ -10,62 +17,196 @@ body, html {
   text-align: center;
   color: white;
 }
-.titlebar {
-      position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    /*overflow: hidden;
-    background-color: #444;
-    width: 100%;
-    margin: 0;
-    position: top;
-    padding-top: 60px;
-    padding-bottom: 20px;*/
-}
 
-/* navigation bar */
-.navbar {
-    overflow: auto;
-    background-color: #060477;
+header {
+    height: 70px;
+    background-color: #22292F;
+    padding: 10px 0;
+}
+.menu-wrap {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 15px;
     position: -webkit-sticky; /* Safari */
     position: sticky;
-    position: fixed; 
-    position: top;
-    padding: 14px 20px;
-    top: 0;
+    z-index:20; /*stay on top*/
+}
+.logo-img {
+    height: 50px;
+}
+.menu-icon {
+    font-size: 2.4em;
+    color: #ffffff;
+    line-height: 50px;
+}
+nav {
+    position: absolute;
+    background-color: #3D4852;
+    top:70px;
+    left:0;
     width: 100%;
-    margin: 0;
-    z-index:1; /*stay on top*/
+}
+nav ul {
+    list-style-type: none;
+    max-height: 0px;
+    overflow: hidden;
+    transition: all 0.5s;
+}
+nav ul li {
+    padding: 0 15px;
+}
+nav ul li a {
+    display: inline-block;
+    padding: 12px;
+    /* Add your custom styles below to change appearance of links */
+    color: #DAE1E7;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+}
+nav ul li a:hover, nav ul li a:focus {
+    color: #eb6f4a;
+}
+#checkbox {
+    display: none;
+}
+#checkbox:checked ~ nav ul {
+    max-height: 500px;
+    padding: 15px 0;
+    transition: all 0.5s;
 }
 
-/* Links inside the navbar */
-.navbar a {
+@media (min-width: 1150px) { 
+    .menu-icon {
+        display: none;
+    }
+    nav {
+        position: relative;
+        top: -10px;
+        background-color: transparent;
+        z-index:20;
+    }
+    nav ul {
+        max-height: 150px;
+        padding: 15px 0;
+        text-align: right;
+        z-index:20;
+    }
+    nav ul li {
+        display: inline-flex;
+        padding-left: 20px;
+        z-index:20;
+    }
+}
+
+/*h1{
+    font-size: 2.2em;
+    text-align: center;
+    padding: 60px 40px 30px;
+    color: #3D4852;
+    line-height: 1.2;
+}*/
+p{
+    line-height: 1.6;
+    font-size: 1.2em;
+    padding: 0 40px;
+    text-align: center;
+    color: #3D4852;
+}
+
+/* Centered text */
+.centered {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.content {
+    margin: 0 auto;
+    width: 65%;
+    text-align: left;
+}
+
+
+
+h1 {
+    display: block;
+    text-align: center;
+    font-size: 1em;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+    color: #fff; /*#fff for white, #000 for black */
+}
+
+@media (min-width: 600px) { 
+    h1 {
+        display: block;
+        text-align: center;
+        font-size: 1.5em;
+        margin-top: 0.67em;
+        margin-bottom: 0.67em;
+        margin-left: 0;
+        margin-right: 0;
+        font-weight: bold;
+        color: #fff; /*#fff for white, #000 for black */
+    }
+}
+
+@media (min-width: 800px) { 
+    h1 {
+        display: block;
+        text-align: center;
+        font-size: 2em;
+        margin-top: 0.67em;
+        margin-bottom: 0.67em;
+        margin-left: 0;
+        margin-right: 0;
+        font-weight: bold;
+        color: #fff; /*#fff for white, #000 for black */
+    }
+}
+
+h2 {
+    display: block;
+    text-align: center;
+    font-size: 1.5em;
+    margin-top: 0.83em;
+    margin-bottom: 0.83em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+}
+
+h3 {
+    display: block;
+    font-size: 1.17em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 0;
+    margin-right: 0;
+    font-weight: bold;
+}
+
+table{
+    display: inline;
     float: center;
-    /*display: inline;*/
+}
+
+th {
     color: #fff;
     background-color: #060477;
-    text-align: center;
-    width: 25%;
-    padding: 20px;
-    text-decoration: none;
+    font-weight: bold;
 }
 
-/* Add responsiveness - on screens less than 500px, make the navigation links appear on top of each other, instead of next to each other */
-@media screen and (max-width: 500px) {
-  .navbar a {
-    float: none;
-    display: block;
-    width: 100%;
-    text-align: center;
-  }
+th, td {
+    border-bottom: 1px solid #ddd;
+    padding: 5px 20px;
+    text-align: left;
 }
 
-/* Change link appearance on mouse-over */
-.navbar a:hover {
-    background: #ddd;
-    color: black;
-}
 
 
 /* Main content */
@@ -92,59 +233,6 @@ body, html {
     position: static;
 }
 
-/*#content {
-    width: 90%;
-}*/
-
-h1 {
-    display: block;
-    text-align: center;
-    font-size: 2em;
-    margin-top: 0.67em;
-    margin-bottom: 0.67em;
-    margin-left: 0;
-    margin-right: 0;
-    font-weight: bold;
-    color: #fff;
-}
-
-h2 {
-    display: block;
-    text-align: center;
-    font-size: 1.5em;
-    margin-top: 0.83em;
-    margin-bottom: 0.83em;
-    margin-left: 0;
-    margin-right: 0;
-    font-weight: bold;
-}
-
-h3 {
-    display: inline-block;
-    font-size: 1.3em;
-    padding: 0.5em 0.2em 0.8em 0.5em;
-    font-weight: bold;
-    color: #fff;
-    background-color: #8f0404;
-}
-
-
-table{
-    display: inline;
-    float: center;
-}
-
-th {
-    color: #fff;
-    background-color: #060477;
-    font-weight: bold;
-}
-
-th, td {
-    border-bottom: 1px solid #ddd;
-    padding: 5px 20px;
-    text-align: left;
-}
 
 
 tr:nth-child(odd) {background-color: #aaaaaa;}
@@ -156,6 +244,7 @@ tr:hover {
     font-weight: bold;
 }
 
+tr:hover a { color: white; }
 
 
 
