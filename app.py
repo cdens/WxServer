@@ -449,7 +449,7 @@ def observations_plot(obs, is_mobile):
         source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "strikes":strikes}) #organizing data into columndatasource format
         
         #initializing figure
-        p = figure(height=400, width=1500, title='', x_axis_type="datetime", toolbar_location="above",
+        p = figure(height=400, width=1500, aspect_ratio=3, min_height=200, title='', x_axis_type="datetime", toolbar_location="above",
             tools="pan,wheel_zoom,box_zoom,reset")
         p.extra_y_ranges = {}
         p.yaxis.visible = False #drop default y axis
@@ -508,9 +508,8 @@ def observations_plot(obs, is_mobile):
         
         
         #adding legend
-        if not is_mobile:
-            p.legend.location = "top_left"
-            p.legend.click_policy="hide"
+        p.legend.location = "top_left"
+        p.legend.click_policy="hide"
         
         
         #adding hover tool
