@@ -81,8 +81,8 @@ if __name__ == "__main__":
     dates, ta, rh, pres, wspd, wdir, solar, precip, strikes = csv_to_lists(csvdir)
     
     #creating db
-    if os.path.exists('wxobs.db'):
-        os.remove('wxobs.db')
+    if os.path.exists('instance/wxobs.db'):
+        os.remove('instance/wxobs.db')
         
     app.app_context().push()
     db.create_all()
