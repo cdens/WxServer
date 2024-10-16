@@ -195,7 +195,7 @@ def index():
         
         tableobs = parsedboutput(wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate)) #observations for plot/table
         obsplot = observations_plot(tableobs) #building plot components given observations
-        lastob = parsedboutput([wxobs.query.order_by(-wxobs.id).first()])[0] #orders by recent ob first *in brackets to make iterable
+        lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first *in brackets to make iterable
         
         #GPS position info
         if locationInfo.locationstr != "":

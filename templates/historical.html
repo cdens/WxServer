@@ -39,7 +39,7 @@
             {% for cob in tableobs %}
             <tr>
     			<td>{{ cob.date.strftime("%Y-%m-%d %H:%M") }}</td>
-    			<td>{{ round(cob.temp*9/5+32,1) }}</td>
+    			<td>{{ round(cob.temp,1) }}</td>
     			<td>{{ round(cob.rh,1) }}</td>
     			<td>{{ round(cob.pres,1) }}</td>
     			<td>{{ round(cob.wspd,1) }}</td>
