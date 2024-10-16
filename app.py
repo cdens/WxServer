@@ -194,7 +194,9 @@ def index():
     with app.app_context():
         
         tableobs = parsedboutput(wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate)) #observations for plot/table
-        obsplot = observations_plot(tableobs) #building plot components given observations
+        
+        is_mobile = user_on_mobile()
+        obsplot = observations_plot(tableobs, is_mobile) #building plot components given observations
         lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first *in brackets to make iterable
         
         #GPS position info
@@ -244,9 +246,10 @@ def historical():
             enddate += timedelta(days=1)
                 
         #pulling observations
+        is_mobile = user_on_mobile()
         tableobs = parsedboutput(wxobs.query.order_by(wxobs.id).filter((wxobs.date >= startdate) & (wxobs.date <= enddate))) #observations for plot/table
         
-        obsplot = observations_plot(tableobs) #building plot components given observations
+        obsplot = observations_plot(tableobs, is_mobile) #building plot components given observations
         
         #pulling date constraints for date selection tool
         dates = {}
@@ -264,10 +267,15 @@ def piwxoverview():
         
     
     
-#route to static blog page for how to build the wx station
-@app.route('/howto', methods=['GET']) 
-def howto():
-    return render_template('howto.html') 
+def user_on_mobile() -> bool:
+
+    user_agent = request.headers.get("User-Agent")
+    user_agent = user_agent.lower()
+    phones = ["android", "iphone"]
+
+    if any(x in user_agent for x in phones):
+        return True
+    return False
     
     
     
@@ -425,7 +433,7 @@ def plot_styler(p):
 
     
     
-def observations_plot(obs):
+def observations_plot(obs, is_mobile):
     
     try:
         # source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "solar":solar, "strikes":strikes}) #organizing data into columndatasource format
@@ -454,30 +462,35 @@ def observations_plot(obs):
         
         #humidity
         p.extra_y_ranges["rh"] = Range1d(start=np.floor(np.min(rh))-1, end=np.ceil(np.max(rh))+1)
-        p.add_layout(LinearAxis(y_range_name="rh", axis_line_color="blue"), 'left')
+        if not is_mobile:
+            p.add_layout(LinearAxis(y_range_name="rh", axis_line_color="blue"), 'left')
         p.line(x="date", y="rh", source=source, line_color="blue", name="Humidity", y_range_name="rh", legend_label="Humidity")
         p.scatter(x="date", y="rh", source=source, color="blue", name="Humidity", y_range_name="rh", legend_label="Humidity")
         
         #pressure
         p.extra_y_ranges["pres"] = Range1d(start=np.floor(np.min(pres))-1, end=np.ceil(np.max(pres))+1)
-        p.add_layout(LinearAxis(y_range_name="pres", axis_line_color="green"), 'left')
+        if not is_mobile:
+            p.add_layout(LinearAxis(y_range_name="pres", axis_line_color="green"), 'left')
         p.line(x="date", y="pres", source=source, line_color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
         p.scatter(x="date", y="pres", source=source, color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
         
         #wind speed
         p.extra_y_ranges["wspd"] = Range1d(start=0, end=np.ceil(np.max(np.array([np.max(wspd), 10]))+1))
-        p.add_layout(LinearAxis(y_range_name="wspd", axis_line_color="orange"), 'left')
+        if not is_mobile:
+            p.add_layout(LinearAxis(y_range_name="wspd", axis_line_color="orange"), 'left')
         p.line(x="date", y="wspd", source=source, line_color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
         p.scatter(x="date", y="wspd", source=source, color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
         
         #wind direction
         p.extra_y_ranges["wdir"] = Range1d(start=-5, end=365)
-        p.add_layout(LinearAxis(y_range_name="wdir", axis_line_color="purple"), 'left')
+        if not is_mobile:
+            p.add_layout(LinearAxis(y_range_name="wdir", axis_line_color="purple"), 'left')
         p.scatter(x="date", y="wdir", source=source, color="purple", name="Wind Direction", y_range_name="wdir", legend_label="Wind Direction")
         
         #precipitation 
         p.extra_y_ranges["precip"] = Range1d(start=np.floor(np.min(precip)), end=np.ceil(np.max(precip))+1)
-        p.add_layout(LinearAxis(y_range_name="precip", axis_line_color="blue"), 'left')
+        if not is_mobile:
+            p.add_layout(LinearAxis(y_range_name="precip", axis_line_color="blue"), 'left')
         p.vbar(x="date",top="precip", width = .9, fill_alpha = .5, fill_color = 'blue', line_alpha = .5, line_color='blue', source=source, name="Precipitation", y_range_name="precip", legend_label="Precipitation")
     
         
@@ -489,13 +502,15 @@ def observations_plot(obs):
         
         #lightning strikes
         p.extra_y_ranges["strikes"] = Range1d(start=np.floor(np.min(strikes)), end=np.ceil(np.max(strikes))+1)
-        p.add_layout(LinearAxis(y_range_name="strikes", axis_line_color="yellow"), 'left')
+        if not is_mobile:
+            p.add_layout(LinearAxis(y_range_name="strikes", axis_line_color="yellow"), 'left')
         p.vbar(x="date",top="strikes", width = .9, fill_alpha = .5, fill_color = 'yellow', line_alpha = .5, line_color='yellow', source=source, name="Lightning Strikes", y_range_name="strikes", legend_label="Lightning Strikes")
         
         
         #adding legend
-        p.legend.location = "top_left"
-        p.legend.click_policy="hide"
+        if not is_mobile:
+            p.legend.location = "top_left"
+            p.legend.click_policy="hide"
         
         
         #adding hover tool
