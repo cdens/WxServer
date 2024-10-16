@@ -22,7 +22,7 @@ from geopy.geocoders import Nominatim
 
 #######################################################################################
 #                                     INITIALIZATION                                  # 
-####################################################################################### 
+#######################################################################################
 
 
 app = Flask(__name__) #creating app instance
@@ -38,8 +38,8 @@ global lastStrikeTime, lastStrikeDist
 class LocationInfo():
     
     def __init__(self):
-        self.latitude = "30.37"
-        self.longitude = "-87.34" 
+        self.latitude = "30.20"
+        self.longitude = "-81.60" 
         self.locationstr = "Jacksonville, FL, USA"
         
         self.timezone = self.get_time_zone()
@@ -51,7 +51,7 @@ class LocationInfo():
     
     def get_sun_times(self):
         sun = Sun(float(self.latitude), float(self.longitude))
-        return [sun.get_sunrise_time(), sun.get_sunset_time()]
+        return [sun.get_sunrise_time().replace(tzinfo=None), sun.get_sunset_time().replace(tzinfo=None)]
     
     def parse_geolocator():
         outputstr = ""
@@ -136,6 +136,9 @@ def parsedboutput(obs):
     solar = []
     strikes = []
     
+    fromzone = tz.gettz('UTC')
+    tozone = tz.gettz(locationInfo.timezone)
+    
     with app.app_context():
         for entry in obs:
             date.append(replacetimezone(entry.date,fromzone,tozone)) #local time
@@ -153,8 +156,18 @@ def parsedboutput(obs):
     return date,tempF,rh,pres,wspd,wdir,precip,solar,strikes
 
 
-    
+def reformat_dates(db_in):
+
+    db_out = db_in
+    fromzone = tz.gettz('UTC')
+    tozone = tz.gettz(locationInfo.timezone)
+    try:
+        for i,ob in enumerate(db_out):
+            db_out[i].date = replacetimezone(ob.date,fromzone,tozone)
+    except TypeError: #object not iterable = only one entry
+        db_out.date = replacetimezone(db_out.date,fromzone,tozone)
         
+    return db_out
     
         
         
@@ -176,7 +189,11 @@ def index():
         
         tableobs = wxobs.query.order_by(-wxobs.id).filter(wxobs.date >= startdate) #observations for plot/table
         obsplot = observations_plot(tableobs) #building plot components given observations
-        lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first 
+        lastob = wxobs.query.order_by(-wxobs.id).first() #orders by recent ob first
+        
+        #convert dates to local time 
+        tableobs = reformat_dates(tableobs) 
+        lastob = reformat_dates(lastob) 
         
         #GPS position info
         if locationInfo.locationstr != "":
@@ -227,6 +244,8 @@ def historical():
         #pulling observations
         tableobs = wxobs.query.order_by(wxobs.id).filter((wxobs.date >= startdate) & (wxobs.date <= enddate)) #observations for plot/table
         obsplot = observations_plot(tableobs) #building plot components given observations
+        
+        tableobs = reformat_dates(tableobs) #convert dates to local time
         
         #pulling date constraints for date selection tool
         dates = {}
@@ -288,21 +307,30 @@ def addnewob():
             timeSinceStrike = int(np.round((cdate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
             if timeSinceStrike <= 30 and lastStrikeDist <= 30: #lightning within 30 km and 30 min
                 image = "thunderstorm"
-            elif cprecip >= 1: #rainfall > 1mm/hr recorded
+            elif float(cprecip) >= 1: #rainfall > 1mm/hr recorded
                 image = "rainyday"
-            elif abs(()) <= 3600: #within an hour of sunset
+            elif abs((locationInfo.sun_times[1] - cdate).total_seconds()) <= 3600: #within an hour of sunset
                 image = "sunset"
             elif cdate >= locationInfo.sun_times[0] and cdate <= locationInfo.sun_times[1]: #between sunrise and sunset (daytime)
                 image = clearday
             else: #leaves nighttime, no rain/thunderstorm
-                image = clearnight    
-            shutil.copy(f"static/panoramas/{image}.jpg","static/background/default.jpg")
+                image = clearnight
+                
+            #copy image if the current image is different
+            change_image(image)
             
             #return success message to indicate data was added
             return "SUCCESS"
     else:
         return "INVALID_CREDENTIAL"
 
+    
+#change the background panorama, check hash is different to avoid replacing the same file with itself
+def change_image(image):
+    new_header = f"static/panoramas/{image}.jpg"
+    current_header = "static/background/default.jpg"
+    if sha1(new_header.encode('utf-8')).hexdigest() != sha1(current_header.encode('utf-8')).hexdigest():
+        shutil.copy(new_header,current_header)
         
 
 #update GPS position
@@ -339,7 +367,7 @@ def strikereport():
             
             #switch top bar image to thunderstorm if strike within 30 km
             if lastStrikeDist <= 30:
-                shutil.copy(f"static/panoramas/thunderstorm.jpg","static/background/default.jpg")
+                change_image("thunderstorm")
             
             #return success message to indicate data was added
             return "SUCCESS"
@@ -500,8 +528,6 @@ def observations_plot(obstoplot):
 
 
 #time zone configuration
-fromzone = tz.gettz('UTC')
-tozone = tz.gettz('America/Chicago')
 def replacetimezone(inputdate,inputzone,outputzone):
     
     inputdate = inputdate.replace(tzinfo=inputzone)
