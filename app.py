@@ -313,9 +313,9 @@ def addnewob():
             elif abs((locationInfo.sun_times[1] - cdate).total_seconds()) <= 3600: #within an hour of sunset
                 image = "sunset"
             elif cdate >= locationInfo.sun_times[0] and cdate <= locationInfo.sun_times[1]: #between sunrise and sunset (daytime)
-                image = clearday
+                image = "clearday"
             else: #leaves nighttime, no rain/thunderstorm
-                image = clearnight
+                image = "clearnight"
                 
             #copy image if the current image is different
             change_image(image)
