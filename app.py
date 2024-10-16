@@ -197,7 +197,7 @@ def index():
         
         is_mobile = user_on_mobile()
         obsplot = observations_plot(tableobs, is_mobile) #building plot components given observations
-        lastob = tableobs[-1] #most recent data point
+        lastob = tableobs[0] #most recent data point
         
         #GPS position info
         if locationInfo.locationstr != "":
