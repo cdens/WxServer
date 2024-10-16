@@ -22,34 +22,36 @@
     <br></br>
     <br></br>
     
-    <table>
-        <thead>
-            <tr>
-    			<th>Date/Time (UTC)</th>
-    			<th>Temperature (<sup>o</sup>F)</th>
-    			<th>Humidity (%)</th>
-    			<th>Pressure (mb)</th>
-                <th>Wind Speed (mph)</th>
-                <th>Wind Direction (<sup>o</sup>T)</th>
-                <th>Rainfall (mm/hr)</th>
-                <th>Lightning (strikes/hr)</th>
-    		</tr>
-        </thead>
-        <tbody>
-            {% for cob in tableobs %}
-            <tr>
-    			<td>{{ cob.date.strftime("%Y-%m-%d %H:%M") }}</td>
-    			<td>{{ round(cob.temp,1) }}</td>
-    			<td>{{ round(cob.rh,1) }}</td>
-    			<td>{{ round(cob.pres,1) }}</td>
-    			<td>{{ round(cob.wspd,1) }}</td>
-    			<td>{{ round(cob.wdir,0) }}</td>
-    			<td>{{ round(cob.precip,1) }}</td>
-    			<td>{{ round(cob.strikes,0) }}</td>
-    		</tr>
-            {% endfor %}
-        </tbody>
-	</table>
+    <div style='overflow-x:auto'>
+        <table>
+            <thead>
+                <tr>
+        			<th>Date/Time (UTC)</th>
+        			<th>Temperature (<sup>o</sup>F)</th>
+        			<th>Humidity (%)</th>
+        			<th>Pressure (mb)</th>
+                    <th>Wind Speed (mph)</th>
+                    <th>Wind Direction (<sup>o</sup>T)</th>
+                    <th>Rainfall (mm/hr)</th>
+                    <th>Lightning (strikes/hr)</th>
+        		</tr>
+            </thead>
+            <tbody>
+                {% for cob in tableobs %}
+                <tr>
+        			<td>{{ cob.date.strftime("%Y-%m-%d %H:%M") }}</td>
+        			<td>{{ round(cob.temp,1) }}</td>
+        			<td>{{ round(cob.rh,1) }}</td>
+        			<td>{{ round(cob.pres,1) }}</td>
+        			<td>{{ round(cob.wspd,1) }}</td>
+        			<td>{{ round(cob.wdir,0) }}</td>
+        			<td>{{ round(cob.precip,1) }}</td>
+        			<td>{{ round(cob.strikes,0) }}</td>
+        		</tr>
+                {% endfor %}
+            </tbody>
+    	</table>
+    </div>
     
 </div>
 {% endblock %}
