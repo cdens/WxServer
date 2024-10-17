@@ -329,9 +329,9 @@ def currentdata():
         "sys": {"type": 1,"id": 1,"country": "US","sunrise": round(locationInfo.sun_times[0].timestamp()), "sunset": round(locationInfo.sun_times[0].timestamp())}, 
         "timezone": -14400, "id": 0000000, "name": locationInfo.locationstr, "cod": 0} #TODO- fix timezone
         
-    print('test')
+    htmloutput = "<html>\n<head></head>\n<body><pre>" + json.dumps(output) + "</pre><div></div></body></html>"
         
-    return json.dumps(output)
+    return htmloutput
 
     
 def user_on_mobile() -> bool:
