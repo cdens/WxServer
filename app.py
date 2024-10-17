@@ -281,8 +281,8 @@ def piwxoverview():
     
 
 #API-style request for JSON data (for Magic Mirror), mimics OpenWeatherMap API for CurrentWeather Module
-@app.route('/current', methods=['POST','GET'])
-def returnCurrentDataJSON():
+@app.route('/currentdata', methods=['POST','GET'])
+def currentdata():
     
     global locationInfo, lastStrikeTime, lastStrikeDist
     locationInfo.refresh_sun_times()
@@ -331,9 +331,7 @@ def returnCurrentDataJSON():
         
     print('test')
         
-    # return json.dumps(output)
-    return render_template('piwxoverview.html') 
-
+    return json.dumps(output)
 
     
 def user_on_mobile() -> bool:
