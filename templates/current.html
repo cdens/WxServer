@@ -34,8 +34,8 @@
 			<td>{{ round(lastob.pres,1) }}</td>
 		</tr>
 		<tr>
-			<td>Wind Speed (mph):</td>
-			<td>{{ round(lastob.wspd,1) }}</td>
+			<td>Wind Speed / Gust (mph):</td>
+			<td>{{ round(lastob.wspd,1) }} / {{ round(lastob.wgust,1) }}</td>
 		</tr>
 		<tr>
 			<td>Wind Direction (<sup>o</sup>T):</td>
@@ -68,7 +68,7 @@
         			<th>Temperature (<sup>o</sup>F)</th>
         			<th>Humidity (%)</th>
         			<th>Pressure (mb)</th>
-                    <th>Wind Speed (mph)</th>
+                    <th>Wind Speed/Gust (mph)</th>
                     <th>Wind Direction (<sup>o</sup>T)</th>
                     <th>Rainfall (mm/hr)</th>
                     <th>Lightning (strikes/hr)</th>
@@ -81,7 +81,7 @@
         			<td>{{ round(cob.temp,1) }}</td>
         			<td>{{ round(cob.rh,1) }}</td>
         			<td>{{ round(cob.pres,1) }}</td>
-        			<td>{{ round(cob.wspd,1) }}</td>
+        			<td>{{ round(cob.wspd,1) }} / {{ round(cob.wgust,1) }}</td>
         			<td>{{ round(cob.wdir,0) }}</td>
         			<td>{{ round(cob.precip,1) }}</td>
         			<td>{{ round(cob.strikes,0) }}</td>

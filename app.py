@@ -116,6 +116,7 @@ class wxobs(db.Model): #class for weather observations database
     rh = db.Column(db.Float, nullable=False) 
     pres = db.Column(db.Float, nullable=False) 
     wspd = db.Column(db.Float, nullable=False)
+    wgust = db.Column(db.Float, nullable=False)
     wdir = db.Column(db.Float, nullable=False)
     precip = db.Column(db.Float, nullable=False)
     solar = db.Column(db.Float, nullable=False)
@@ -127,12 +128,13 @@ class wxobs(db.Model): #class for weather observations database
         
 #stores dataset as individual lists of time series AND as list of individual observations 
 class ObservationList():
-    def __init__(self, date, temp, rh, pres, wspd, wdir, precip, solar, strikes):
+    def __init__(self, date, temp, rh, pres, wspd, wgust, wdir, precip, solar, strikes):
         self.date = date
         self.temp = temp
         self.rh = rh
         self.pres = pres
         self.wspd = wspd
+        self.wgust = wgust
         self.wdir = wdir
         self.precip = precip
         self.solar = solar
@@ -146,6 +148,7 @@ def parsedboutput(obs):
     rh = []
     pres = []
     wspd = []
+    wgust = []
     wdir = []
     precip = []
     solar = []
@@ -161,6 +164,7 @@ def parsedboutput(obs):
             rh.append(entry.rh)
             pres.append(entry.pres)
             wspd.append(entry.wspd)
+            wgust.append(entry.wgust)
             wdir.append(entry.wdir)
             precip.append(entry.precip)
             solar.append(entry.solar)
@@ -169,8 +173,8 @@ def parsedboutput(obs):
     tempF = [(t*9/5 + 32) for t in temp]
     
     ob_list = []
-    for cdate,ctemp,crh,cpres,cwspd,cwdir,cprecip,csolar,cstrikes in zip(date, tempF, rh, pres, wspd, wdir, precip, solar, strikes):
-        ob_list.append(ObservationList(cdate,ctemp,crh,cpres,cwspd,cwdir,cprecip,csolar,cstrikes))
+    for cdate,ctemp,crh,cpres,cwspd,cwgust,cwdir,cprecip,csolar,cstrikes in zip(date, tempF, rh, pres, wspd, wgust, wdir, precip, solar, strikes):
+        ob_list.append(ObservationList(cdate,ctemp,crh,cpres,cwspd,cwgust,cwdir,cprecip,csolar,cstrikes))
             
     return ob_list
 
@@ -302,6 +306,7 @@ def addnewob():
                 crh = request.form["rh"]
                 cpres = request.form["pres"]
                 cwspd = request.form["wspd"]
+                cwgust = request.form["wgust"]
                 cwdir = request.form["wdir"]
                 csolar = request.form["solar"]
                 cprecip = request.form["precip"]
@@ -311,7 +316,7 @@ def addnewob():
                 
             #adding to database
             lastID = wxobs.query.order_by(-wxobs.id).first().id
-            entry = wxobs(id=lastID + 1, date=cdate, temp=cta, rh=crh, pres=cpres, wspd = cwspd, wdir = cwdir, precip=cprecip, solar=csolar, strikes=cstrikes)
+            entry = wxobs(id=lastID + 1, date=cdate, temp=cta, rh=crh, pres=cpres, wspd = cwspd, wgust=cwgust, wdir = cwdir, precip=cprecip, solar=csolar, strikes=cstrikes)
             db.session.add(entry)
             db.session.commit()
             
@@ -446,11 +451,12 @@ def observations_plot(obs, is_mobile):
         rh = [ob.rh for ob in obs]
         pres = [ob.pres for ob in obs]
         wspd = [ob.wspd for ob in obs]
+        wgust = [ob.wgust for ob in obs]
         wdir = [ob.wdir for ob in obs]
         precip = [ob.precip for ob in obs]
         # solar = []
         strikes = [ob.strikes for ob in obs]
-        source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wdir":wdir, "precip":precip, "strikes":strikes}) #organizing data into columndatasource format
+        source = ColumnDataSource(data={"date":date, "temp":temp, "rh":rh, "pres":pres, "wspd":wspd, "wgust":wgust, "wdir":wdir, "precip":precip, "strikes":strikes}) #organizing data into columndatasource format
         
         #initializing figure
         p = figure(height=400, width=1500, aspect_ratio=3, min_height=300, title='', x_axis_type="datetime", toolbar_location="above",
@@ -479,11 +485,18 @@ def observations_plot(obs, is_mobile):
         p.scatter(x="date", y="pres", source=source, color="green", name="Pressure", y_range_name="pres", legend_label="Pressure")
         
         #wind speed
-        p.extra_y_ranges["wspd"] = Range1d(start=0, end=np.ceil(np.max(np.array([np.max(wspd), 10]))+1))
+        p.extra_y_ranges["wspd"] = Range1d(start=0, end=np.ceil(np.max(np.array([np.max(wgust), 10]))+1))
         if not is_mobile:
             p.add_layout(LinearAxis(y_range_name="wspd", axis_line_color="orange"), 'left')
         p.line(x="date", y="wspd", source=source, line_color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
         p.scatter(x="date", y="wspd", source=source, color="orange", name="Wind Speed", y_range_name="wspd", legend_label="Wind Speed")
+        
+        #wind gust
+        # p.extra_y_ranges["wgust"] = Range1d(start=0, end=np.ceil(np.max(np.array([np.max(wgust), 10]))+1))
+        # if not is_mobile: #same axis as wind speed
+        # p.add_layout(LinearAxis(y_range_name="wspd", axis_line_color="orange"), 'left')
+        p.line(x="date", y="wgust", source=source, line_color="coral", name="Wind Gust", y_range_name="wspd", legend_label="Wind Gust")
+        p.scatter(x="date", y="wgust", source=source, color="coral", name="Wind Gust", y_range_name="wspd", legend_label="Wind Gust")
         
         #wind direction
         p.extra_y_ranges["wdir"] = Range1d(start=-5, end=365)
@@ -496,7 +509,7 @@ def observations_plot(obs, is_mobile):
         if not is_mobile:
             p.add_layout(LinearAxis(y_range_name="precip", axis_line_color="blue"), 'left')
         p.vbar(x="date",top="precip", width = .9, fill_alpha = .5, fill_color = 'blue', line_alpha = .5, line_color='blue', source=source, name="Precipitation", y_range_name="precip", legend_label="Precipitation")
-    
+        
         
         # #solar radiation
         # p.extra_y_ranges["solar"] = Range1d(start=np.floor(np.min(solar))-1, end=np.ceil(np.max(solar))+1)
@@ -522,6 +535,7 @@ def observations_plot(obs, is_mobile):
                     ("Humidity (%)", "@rh{00.0}"), 
                     ("Pressure (mb)", "@pres{0000.0}"),
                     ("Wind Speed (mph)", "@wspd{0.0}"),
+                    ("Wind Gust (mph)", "@wgust{0.0}"),
                     ("Wind Direction", "@wdir{000}"),
                     ("Precipitation (mm/hr)", "@precip{0.0}"), #("Solar Radiation", "@solar"),
                     ("Lightning (strikes/hr)", "@strikes{0.0}")] #setting tooltips for interactive hover
