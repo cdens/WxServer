@@ -23,11 +23,11 @@ def readfile(filename):
         for line in f:
             line = line.strip().split(',')
             
-            if len(line) == 8:
+            if len(line) == 9:
                 addon = 0
                 wscale = 3 #multiply wind speed by 3 for anemometer calibration
                 wgust.append(float(line[4])*wscale)
-            elif len(line) == 9:
+            elif len(line) == 10:
                 addon = 1
                 wgust.append(float(line[5]))
                 wscale = 1
