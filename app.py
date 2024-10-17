@@ -9,12 +9,14 @@ from bokeh.plotting import figure
 from bokeh.transform import factor_cmap
 
 import shutil
+import time
 from datetime import datetime, timedelta
 from dateutil import tz
 import timezonefinder, pytz
 from suntime import Sun, SunTimeException
 import numpy as np
 from hashlib import sha1
+import json
 
 from geopy.geocoders import Nominatim
 
@@ -49,6 +51,9 @@ class LocationInfo():
         tf = timezonefinder.TimezoneFinder()
         return tf.certain_timezone_at(lat=float(self.latitude), lng=float(self.longitude))
     
+    def refresh_sun_times(self):
+        self.sun_times = self.get_sun_times()
+        
     def get_sun_times(self):
         sun = Sun(float(self.latitude), float(self.longitude))
         return [sun.get_sunrise_time().replace(tzinfo=None), sun.get_sunset_time().replace(tzinfo=None)]
@@ -274,6 +279,62 @@ def piwxoverview():
     return render_template('piwxoverview.html') 
         
     
+
+#API-style request for JSON data (for Magic Mirror), mimics OpenWeatherMap API for CurrentWeather Module
+@app.route('/current', methods=['POST','GET'])
+def returnCurrentDataJSON():
+    
+    global locationInfo, lastStrikeTime, lastStrikeDist
+    locationInfo.refresh_sun_times()
+    
+    #get most recent data point
+    with app.app_context():
+        lastob = parsedboutput([wxobs.query.order_by(-wxobs.id).first()])[0]
+    
+    cdate = datetime.utcnow()
+    timeSinceStrike = int(np.round((cdate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
+    
+    #determining icon to send
+    if timeSinceStrike <= 30 and lastStrikeDist <= 30: #lightning within 30 km and 30 min = thunderstorm
+        num = "11"
+    elif lastob.precip >= 0: #rainfall > 1mm/hr recorded
+        if lastob.temp > 32: #rain
+            num = "10"
+        else:
+            num = "13" #snow
+    elif lastob.wgust > 10: #windy
+        num = "04"
+    elif lastob.temp <= 60 and lastob.rh > 85: #foggy
+        num = "50"
+    else: 
+        num = "01" #sunny -TODO- distinguish sunny and cloudy
+    
+    
+    if cdate >= locationInfo.sun_times[0] and cdate <= locationInfo.sun_times[1]: #between sunrise and sunset (daytime)
+        dn = "d"
+    else:
+        dn = "n"
+        
+    wxicon = num + dn
+    
+    #integrate with openweather API to fill in gaps (cloud cover, icons, etc?)
+    output = {"coord": {"lon": float(locationInfo.longitude),"lat": float(locationInfo.latitude)}, 
+        "weather": [{"id": 0,"main": "not_used","description": "not_used","icon": wxicon}], #TODO
+        "base": "stations", #TODO- fix "id" per API
+        "main": {"temp": lastob.temp,"feels_like": lastob.temp,"temp_min": lastob.temp, "temp_max":lastob.temp, "pressure":lastob.pres ,"humidity":lastob.rh, "sea_level":lastob.pres , "grnd_level":lastob.pres}, "visibility": 10000,
+        "wind": {"speed": lastob.wspd,"deg": lastob.wdir,"gust": lastob.wgust},
+        "rain": {"1h": lastob.precip},
+        "clouds": {"all": 0},
+        "dt": round(lastob.date.timestamp()),
+        "sys": {"type": 1,"id": 1,"country": "US","sunrise": round(locationInfo.sun_times[0].timestamp()), "sunset": round(locationInfo.sun_times[0].timestamp())}, 
+        "timezone": -14400, "id": 0000000, "name": locationInfo.locationstr, "cod": 0} #TODO- fix timezone
+        
+    print('test')
+        
+    # return json.dumps(output)
+    return render_template('piwxoverview.html') 
+
+
     
 def user_on_mobile() -> bool:
 
@@ -323,6 +384,7 @@ def addnewob():
             #updating top bar image
             global locationInfo, lastStrikeTime, lastStrikeDist
             timeSinceStrike = int(np.round((cdate - lastStrikeTime).total_seconds()/60)) #time since last strike report in minutes
+            locationInfo.refresh_sun_times()
             if timeSinceStrike <= 30 and lastStrikeDist <= 30: #lightning within 30 km and 30 min
                 image = "thunderstorm"
             elif float(cprecip) >= 1: #rainfall > 1mm/hr recorded
@@ -632,6 +694,7 @@ if __name__ == "__main__":
     #app.run(debug=True)
     app.run(debug=True,host='0.0.0.0')
  
+    
     
     
     
